@@ -127,8 +127,8 @@ Run `bun run cf-typegen` after changing bindings in `wrangler.jsonc` or keys in 
 Every deployed build carries an identity (`APP_BUILD_ID` = commit SHA,
 `APP_BUILD_SEQ` = CD run number) that the client compares against
 `GET /api/version`. When the server is serving a newer build, open tabs show a
-banner with a Refresh button. Nothing reloads on its own; a tab stays on its
-build until the user refreshes.
+banner with a Refresh button and a close button (hides it for that tab).
+Nothing reloads on its own; a tab stays on its build until the user refreshes.
 
 - Deploy the `dist` artifact CD builds; don't rebuild it by hand.
 - Roll back by reverting on `develop` and releasing (or a `hotfix/*` revert when

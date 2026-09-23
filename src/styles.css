@@ -22,7 +22,7 @@ main {
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
-  max-width: 24rem;
+  max-width: 26rem;
   margin-left: auto;
   padding: 0.75rem 0.75rem 0.75rem 1rem;
   border-radius: 0.625rem;
@@ -43,8 +43,14 @@ main {
   color: #d1d5db;
 }
 
-.version-banner__refresh {
+.version-banner__actions {
+  display: flex;
   flex-shrink: 0;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.version-banner__refresh {
   padding: 0.375rem 0.875rem;
   border: 0;
   border-radius: 0.375rem;
@@ -60,7 +66,24 @@ main {
   background: #e5e7eb;
 }
 
-.version-banner__refresh:focus-visible {
+.version-banner__close {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: #d1d5db;
+  cursor: pointer;
+}
+
+.version-banner__close:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #f9fafb;
+}
+
+.version-banner__refresh:focus-visible,
+.version-banner__close:focus-visible {
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
 }
