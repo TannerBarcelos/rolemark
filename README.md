@@ -22,34 +22,11 @@ bun run dev                 # runs the Worker locally in workerd
 3. Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 4. Copy the client ID/secret into `.env`. Add the production origin/redirect URI when you deploy.
 
-## Auth layout
+## Auth
 
-| Path                                 | Purpose                                                               |
-| ------------------------------------ | --------------------------------------------------------------------- |
-| `src/auth/auth.ts`                   | `createAuth(db, env)`: Better Auth config (Google, account linking)   |
-| `src/auth/auth.server.ts`            | `getAuth()`: per-request Better Auth instance built from Worker `env` |
-| `src/db/db.server.ts`                | `getDb()`: per-request Drizzle client over Hyperdrive                 |
-| `src/middleware/auth.middleware.ts`  | `authMiddleware` for protected server functions                       |
-| `src/auth/auth-client.ts`            | Browser client (`authClient.signIn.social`, `authClient.signOut`)     |
-| `src/functions/auth.functions.ts`    | `getSession` server fn                                                |
-| `src/functions/account.functions.ts` | Example protected server function                                     |
-| `src/routes/api/auth/$.ts`           | Mounts Better Auth's endpoints at `/api/auth/*`                       |
-| `src/routes/_authenticated.tsx`      | Route guard; anything under `_authenticated/` requires a session      |
-| `src/db/schema.ts`                   | Auth tables (regenerate with `bun run auth:generate`)                 |
-
-Route guards only protect pages. Every server function that touches user data must use
-`authMiddleware` and scope queries by `context.user.id`:
-
-```ts
-export const listThings = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    return getDb().select().from(things).where(eq(things.userId, context.user.id));
-  });
-```
-
-Workers cannot reuse sockets across requests, so never create the database client or auth
-instance at module scope; always go through `getDb()` / `getAuth()`.
+Layout, rules, and how to protect server functions: [docs/auth.md](docs/auth.md). In short, route
+guards only protect pages, so every server function that touches user data must use
+`authMiddleware` and scope queries by `context.user.id`.
 
 ## Database scripts
 
@@ -96,42 +73,18 @@ Run `bun run cf-typegen` after changing bindings in `wrangler.jsonc` or keys in 
 
 ## Branches, releases, and version drift
 
-| Branch    | Role                                    | Receives PRs from                | Deploys to   |
-| --------- | --------------------------------------- | -------------------------------- | ------------ |
-| `develop` | Staging: stable, next release candidate | feature branches                 | `staging`    |
-| `main`    | Production                              | `develop` (releases), `hotfix/*` | `production` |
+Feature branches go into `develop` (deploys to staging), and `develop` or `hotfix/*` goes into
+`main` (deploys to production). Full flow, hotfixes, CI/CD and rollback:
+[docs/releases.md](docs/releases.md).
 
-1. Branch from `develop`, open a PR back into `develop`. CI must pass and the
-   branch must be up to date.
-2. Merging deploys to **staging**. Verify there.
-3. To release, open a PR **`develop` → `main`** (merge commit). The
-   `release-source` check rejects PRs into `main` from anything other than
-   `develop` or `hotfix/*`.
-4. Merging deploys to **production**.
+## Docs
 
-**Hotfixes** skip staging when production can't wait for the next release:
-
-1. Branch `hotfix/<name>` from `main` and open a PR into `main`.
-2. Merging deploys to production.
-3. Open a second PR from the same `hotfix/<name>` branch into `develop`. Without it, the next
-   release from `develop` undoes the fix.
-
-- **CI** (`.github/workflows/ci.yml`) checks every pull request. Its builds
-  are never deployed.
-- **CD** (`.github/workflows/cd.yml`) runs only on pushes to `develop` and
-  `main`: it checks, builds once, and deploys that artifact via
-  `scripts/deploy.sh` (currently a stub; see "Deploying to Cloudflare" for the
-  manual steps). Set a `DEPLOY_URL` variable on each GitHub environment to have
-  CD confirm the live build after deploying.
-
-Every deployed build carries an identity (`APP_BUILD_ID` = commit SHA,
-`APP_BUILD_SEQ` = CD run number) that the client compares against
-`GET /api/version`. When the server is serving a newer build, open tabs show a
-reload banner and the next in-app navigation does a full page load.
-
-- Deploy the `dist` artifact CD builds; don't rebuild it by hand.
-- Roll back by reverting on `develop` and releasing (or a `hotfix/*` revert when
-  it's urgent), not by redeploying an old
-  artifact. An old artifact has a lower run number, so open tabs won't be told
-  to reload.
-- Don't rename `cd.yml`: its run number would restart at 1.
+| Doc                                                | Covers                                          |
+| -------------------------------------------------- | ----------------------------------------------- |
+| [docs/architecture.md](docs/architecture.md)       | Source layout, layer rules, client/server split |
+| [docs/recipes.md](docs/recipes.md)                 | How to add functions, routes, tables, and more  |
+| [docs/auth.md](docs/auth.md)                       | Auth files and rules                            |
+| [docs/planetscale.md](docs/planetscale.md)         | Database topology, setup, schema changes        |
+| [docs/releases.md](docs/releases.md)               | Branches, CI/CD, releases, version drift        |
+| [docs/known-concerns.md](docs/known-concerns.md)   | Deferred risks                                  |
+| [docs/tanstack-skills.md](docs/tanstack-skills.md) | TanStack API guidance for agents                |
