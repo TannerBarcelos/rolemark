@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { useVersionDrift } from "#/lib/use-version-drift";
+import { useVersionDrift } from "#/hooks/use-version-drift";
 
 export function VersionDriftBanner() {
   const { isStale, liveBuild, reload } = useVersionDrift();

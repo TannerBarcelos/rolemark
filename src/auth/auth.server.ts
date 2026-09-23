@@ -2,7 +2,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { env } from "cloudflare:workers";
 
 import { type Db, createDb } from "#/db/client";
-import { type Auth, createAuth } from "#/lib/auth";
+import { type Auth, createAuth } from "#/auth/auth";
 
 interface RequestScope {
   db: Db;
