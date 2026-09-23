@@ -2,7 +2,8 @@
 
 A TanStack Start app on Cloudflare Workers with self-hosted authentication via
 [Better Auth](https://www.better-auth.com) (Google sign-in), Drizzle ORM, and Postgres through
-Cloudflare Hyperdrive.
+Cloudflare Hyperdrive: `docker compose` locally, [PlanetScale Postgres](docs/planetscale.md) for
+staging and production.
 
 ## Setup
 
@@ -51,8 +52,9 @@ instance at module scope; always go through `getDb()` / `getAuth()`.
 ## Database scripts
 
 - `bun run auth:generate` — regenerate `src/db/schema.ts` after changing Better Auth config/plugins
-- `bun run db:generate` — create a SQL migration from schema changes
-- `bun run db:migrate` — apply migrations
+- `bun run db:generate` — create a SQL migration from schema changes (commit `drizzle/`; CI fails
+  if the schema and migrations disagree)
+- `bun run db:migrate` — apply migrations to `DATABASE_URL` (local; CD migrates staging/production)
 - `bun run db:studio` — browse the database
 
 ## Deploying to Cloudflare
@@ -60,9 +62,10 @@ instance at module scope; always go through `getDb()` / `getAuth()`.
 > **Before the first production deploy, read [docs/known-concerns.md](docs/known-concerns.md).**
 > Hyperdrive's default query cache causes stale reads after writes.
 
-1. Provision Postgres (Neon, Supabase, RDS, …) and run `DATABASE_URL=<prod url> bun run db:migrate`.
-2. `bunx wrangler hyperdrive create rolemark-db --connection-string="<prod url>"` and put the id in
-   `wrangler.jsonc`.
+1. Set up the PlanetScale `main` branch, its `app`/`migrator` roles, the initial migration, the
+   `rolemark-db` Hyperdrive config (caching disabled), and the `production` environment's
+   `DATABASE_URL` secret: [docs/planetscale.md](docs/planetscale.md#setup-once-per-environment).
+2. Put the Hyperdrive id in `wrangler.jsonc`.
 3. Set `vars.BETTER_AUTH_URL` in `wrangler.jsonc` to the production origin.
 4. `bunx wrangler secret put BETTER_AUTH_SECRET` (and `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
 5. Add `https://<your-domain>/api/auth/callback/google` to the Google OAuth client.
@@ -71,9 +74,9 @@ instance at module scope; always go through `getDb()` / `getAuth()`.
 **Staging** (`env.staging` in `wrangler.jsonc`, Worker `rolemark-staging`) is deployed from
 `develop` and needs its own copy of everything above. Never point it at the production database.
 
-1. Provision a **separate** staging Postgres and run `DATABASE_URL=<staging url> bun run db:migrate`.
-2. `bunx wrangler hyperdrive create rolemark-db-staging --connection-string="<staging url>"` and put
-   the id in `env.staging.hyperdrive`.
+1. Same PlanetScale setup on the **`staging` branch**, with its own roles, the
+   `rolemark-db-staging` Hyperdrive config, and the `staging` environment's `DATABASE_URL` secret.
+2. Put the Hyperdrive id in `env.staging.hyperdrive`.
 3. Set `env.staging.vars.BETTER_AUTH_URL` to the staging origin.
 4. `bunx wrangler secret put BETTER_AUTH_SECRET --env staging` (and the Google secrets). Use a
    different `BETTER_AUTH_SECRET` from production.
@@ -83,6 +86,9 @@ instance at module scope; always go through `getDb()` / `getAuth()`.
 
 CD builds with `CLOUDFLARE_ENV=staging` on `develop` and without it on `main`, and
 `scripts/deploy.sh` refuses to deploy a build to a different environment than it was built for.
+Before deploying, CD applies `drizzle/` migrations to that environment's PlanetScale branch, so
+migrations must be backward compatible with the previous release
+([docs/planetscale.md](docs/planetscale.md#changing-the-schema)).
 
 Run `bun run cf-typegen` after changing bindings in `wrangler.jsonc` or keys in `.env`.
 

@@ -1,5 +1,5 @@
 name: Install and check
-description: Install dependencies, lint, format-check, build, and typecheck.
+description: Install dependencies, lint, format-check, check migrations, build, and typecheck.
 
 runs:
   using: composite
@@ -16,6 +16,18 @@ runs:
 
     - shell: bash
       run: bun run fmt:check
+
+    # CD applies drizzle/ as-is, so a schema.ts change without its migration would
+    # deploy code that expects columns the database never gets.
+    - name: Check migrations match the schema
+      shell: bash
+      run: |
+        bun run db:generate
+        if [ -n "$(git status --porcelain -- drizzle)" ]; then
+          git status --porcelain -- drizzle
+          echo "::error::src/db/schema.ts has changes without a migration. Run 'bun run db:generate' and commit drizzle/."
+          exit 1
+        fi
 
     # Build before typecheck: the build generates src/routeTree.gen.ts. Build
     # identity comes from APP_BUILD_ID / APP_BUILD_SEQ in the caller's env.

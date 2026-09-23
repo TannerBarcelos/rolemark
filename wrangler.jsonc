@@ -7,10 +7,13 @@
   "observability": { "enabled": true },
   "hyperdrive": [
     {
-      // CRITICAL: query caching is on by default and causes stale read-after-write.
-      // See docs/known-concerns.md before the first production deploy.
+      // Points at the PlanetScale Postgres `main` branch through its `app` role (DML only, direct
+      // port 5432; Hyperdrive does the pooling). Create with caching disabled; the default cache
+      // serves stale read-after-write (docs/known-concerns.md):
+      //   wrangler hyperdrive create rolemark-db --caching-disabled \
+      //     --connection-string="postgresql://app.<branch-id>:<password>@<host>:5432/postgres"
+      // Full steps: docs/planetscale.md.
       "binding": "HYPERDRIVE",
-      // Create with: wrangler hyperdrive create rolemark-db --connection-string="<postgres url>"
       "id": "REPLACE_WITH_HYPERDRIVE_ID",
       // Used by `bun run dev` instead of the real Hyperdrive (matches docker-compose.yml).
       "localConnectionString": "postgres://rolemark:rolemark@localhost:5432/rolemark",
@@ -29,9 +32,10 @@
       "name": "rolemark-staging",
       "hyperdrive": [
         {
-          // Same caching concern as production; see docs/known-concerns.md.
+          // PlanetScale `staging` branch, its own `app` role. Same flags as production:
+          //   wrangler hyperdrive create rolemark-db-staging --caching-disabled \
+          //     --connection-string="postgresql://app.<staging-branch-id>:<password>@<host>:5432/postgres"
           "binding": "HYPERDRIVE",
-          // Create with: wrangler hyperdrive create rolemark-db-staging --connection-string="<staging postgres url>"
           "id": "REPLACE_WITH_STAGING_HYPERDRIVE_ID",
           "localConnectionString": "postgres://rolemark:rolemark@localhost:5432/rolemark",
         },
