@@ -28,7 +28,7 @@ bun run dev                 # runs the Worker locally in workerd
 | ------------------------------------ | ---------------------------------------------------------------------- |
 | `src/auth/auth.ts`                   | `createAuth(db, env)`: Better Auth config (Google, account linking)    |
 | `src/auth/auth.server.ts`            | `getAuth()` / `getDb()`: per-request instances built from Worker `env` |
-| `src/auth/auth.middleware.ts`        | `authMiddleware` for protected server functions                        |
+| `src/middleware/auth.middleware.ts`  | `authMiddleware` for protected server functions                        |
 | `src/auth/auth-client.ts`            | Browser client (`authClient.signIn.social`, `authClient.signOut`)      |
 | `src/functions/auth.functions.ts`    | `getSession` server fn                                                 |
 | `src/functions/account.functions.ts` | Example protected server function                                      |
