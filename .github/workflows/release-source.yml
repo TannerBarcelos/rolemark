@@ -1,0 +1,39 @@
+name: Release source
+
+# Production only receives releases: PRs into main must come from this repo's
+# develop branch. Make the `release-source` check required on main.
+#
+# Separate from CI so it can also run on `edited`: changing a PR's base branch
+# is an edit, and without re-running here a PR could pass against develop and
+# then be retargeted to main with a stale green check.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+concurrency:
+  group: release-source-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  release-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require develop as the source of PRs into main
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$BASE_REF" != "main" ]; then
+            echo "Base is $BASE_REF; no release-source rule applies."
+            exit 0
+          fi
+          if [ "$HEAD_REF" = "develop" ] && [ "$HEAD_REPO" = "$REPO" ]; then
+            echo "Release PR from $REPO:develop."
+            exit 0
+          fi
+          echo "::error::PRs into main must come from $REPO:develop (got $HEAD_REPO:$HEAD_REF). Target develop instead."
+          exit 1
