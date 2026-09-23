@@ -6,6 +6,7 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
 import tailwindcss from "@tailwindcss/vite";
+import agents from "agents/vite";
 
 import viteReact from "@vitejs/plugin-react";
 
@@ -38,6 +39,8 @@ const config = defineConfig({
   },
   plugins: [
     cloudflare({ viteEnvironment: { name: "ssr" } }),
+    // Compiles the Agents SDK's @callable() decorators (docs/integrations.md#ai-features).
+    agents(),
     tailwindcss(),
     tanstackStart(),
     viteReact(),

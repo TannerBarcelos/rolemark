@@ -11,6 +11,7 @@ staging and production.
 bun install
 cp .env.example .env        # then fill in the values
 docker compose up -d        # local Postgres on :5432
+bunx wrangler login         # once: Workers AI is always remote, even in dev
 bun run db:migrate          # create auth tables
 bun run dev                 # runs the Worker locally in workerd
 ```

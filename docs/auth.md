@@ -8,6 +8,7 @@ Better Auth with Google sign-in, sessions stored in Postgres, and a signed cooki
 | ------------------------------------ | --------------------------------------------------------------------- |
 | `src/auth/auth.ts`                   | `createAuth(db, env)`: Better Auth config (Google, account linking)   |
 | `src/auth/auth.server.ts`            | `getAuth()`: per-request Better Auth instance built from Worker `env` |
+| `src/auth/agent-access.server.ts`    | `authorizeAgentRequest`: the access check for every agent URL         |
 | `src/auth/auth-client.ts`            | Browser client (`authClient.signIn.social`, `authClient.signOut`)     |
 | `src/auth/auth.cli.ts`               | Config for `bun run auth:generate` only; never imported by the app    |
 | `src/middleware/auth.middleware.ts`  | `authMiddleware` for protected server functions                       |
@@ -36,6 +37,10 @@ Better Auth with Google sign-in, sessions stored in Postgres, and a signed cooki
   they may touch a specific record. Scope every query by `context.user.id`, and check ownership
   for any function that takes a resource ID. The authorization design is still open: see
   [known-concerns.md](known-concerns.md#authorization-authz).
+- **Agents are protected separately.** `/agents/*` URLs reach Durable Objects without server
+  functions or `authMiddleware`. `src/server.ts` runs `authorizeAgentRequest` on each one: signed
+  in, and the instance name must be the user's id or `<userId>:<key>`. Details:
+  [integrations.md](integrations.md#agents).
 - **Redirects:** pass user-supplied redirect targets through `sanitizeRedirect` (`#/lib/redirect`)
   to prevent open redirects.
 - **Session cookie cache:** `cookieCache.maxAge` is 5 minutes, so a revoked session stays valid on

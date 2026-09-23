@@ -10,20 +10,20 @@ Everything in this table is installed. Prefer the TanStack package whenever one 
 ([tanstack-skills.md](tanstack-skills.md)); where no skill is listed, read the package docs for the
 installed version.
 
-| Need                                     | Use                                                               |
-| ---------------------------------------- | ----------------------------------------------------------------- |
-| Routing, loaders, SSR, server functions  | TanStack Router / Start                                           |
-| Client cache, mutations, invalidation    | TanStack Query (with the router's SSR integration)                |
-| Forms                                    | TanStack Form                                                     |
-| Tables, data grids                       | TanStack Table                                                    |
-| Long lists                               | TanStack Virtual                                                  |
-| Debounce, throttle, rate-limit in the UI | TanStack Pacer                                                    |
-| Shared client state outside the URL      | TanStack Store                                                    |
-| Schemas and validation                   | Zod (server fn `.validator`, forms, `validateSearch`, LLM output) |
-| Database                                 | Drizzle                                                           |
-| Styling / components                     | Tailwind + React Aria Components ([ui.md](ui.md))                 |
-| Tests                                    | Vitest + Testing Library ([testing.md](testing.md))               |
-| AI                                       | LangChain JS / LangGraph ([integrations.md](integrations.md))     |
+| Need                                     | Use                                                                    |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| Routing, loaders, SSR, server functions  | TanStack Router / Start                                                |
+| Client cache, mutations, invalidation    | TanStack Query (with the router's SSR integration)                     |
+| Forms                                    | TanStack Form                                                          |
+| Tables, data grids                       | TanStack Table                                                         |
+| Long lists                               | TanStack Virtual                                                       |
+| Debounce, throttle, rate-limit in the UI | TanStack Pacer                                                         |
+| Shared client state outside the URL      | TanStack Store                                                         |
+| Schemas and validation                   | Zod (server fn `.validator`, forms, `validateSearch`, LLM output)      |
+| Database                                 | Drizzle                                                                |
+| Styling / components                     | Tailwind + React Aria Components ([ui.md](ui.md))                      |
+| Tests                                    | Vitest + Testing Library ([testing.md](testing.md))                    |
+| AI                                       | Agents SDK + AI SDK on Workers AI ([integrations.md](integrations.md)) |
 
 Where state lives, in order of preference: the URL (search params via `validateSearch`) → route
 loader data → TanStack Query → local component state → TanStack Store. No React context for server

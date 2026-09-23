@@ -1,4 +1,5 @@
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import agents from "agents/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
@@ -46,8 +47,13 @@ export default defineConfig({
       {
         extends: true,
         plugins: [
+          // Compiles agents' @callable() decorators, as in vite.config.ts.
+          agents(),
           cloudflareTest({
             wrangler: { configPath: "./wrangler.jsonc" },
+            // Tests never reach Cloudflare: remote-only bindings (AI) are faked per test, and CI
+            // has no Cloudflare credentials.
+            remoteBindings: false,
             // The pool's bundled workerd trails wrangler.jsonc's compatibility_date. Drop this
             // override once `bun run test` passes without it.
             miniflare: { compatibilityDate: "2026-08-22" },

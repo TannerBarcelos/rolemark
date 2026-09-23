@@ -20,7 +20,7 @@ load docs you don't need.
 | Writing or reviewing any code: library defaults, TypeScript, React, errors    | [docs/conventions.md](docs/conventions.md)         |
 | Styling, components, design tokens, Tailwind, React Aria, accessibility       | [docs/ui.md](docs/ui.md)                           |
 | Writing any code (TDD is required), tests, coverage gate, Vitest projects     | [docs/testing.md](docs/testing.md)                 |
-| Infra choices, external providers/SDKs, bindings, AI/LLM features, Sentry     | [docs/integrations.md](docs/integrations.md)       |
+| Infra choices, providers/SDKs, bindings, AI calls, agents, Sentry             | [docs/integrations.md](docs/integrations.md)       |
 
 ## Defaults
 
@@ -29,27 +29,27 @@ load docs you don't need.
   interactive widget, styled with Tailwind. No other component or CSS library.
 - **Infra**: Cloudflare primitives first (R2, KV, Queues, Workflows, Durable Objects, AI Gateway,
   Workers AI, Vectorize). Third parties only for gaps (Sentry for observability).
-- **AI**: LangChain JS / LangGraph, provider-agnostic (Workers AI is one provider), through AI
-  Gateway.
+- **AI**: Cloudflare-native. Agents SDK for stateful agents, AI SDK + `getModel()` on Workers AI
+  for calls, AI Gateway in front. Never build a model outside `getModel()`.
 - **Swappable providers**: app code depends on interfaces we own; vendor SDKs live only in
   adapters. Keep everything else concrete and simple.
 
 ## Commands
 
-| Command                               | Use                                                                  |
-| ------------------------------------- | -------------------------------------------------------------------- |
-| `bun run dev`                         | Run locally in workerd on :3000 (needs `docker compose up -d`)       |
-| `bun run build`                       | Production build; also generates `src/routeTree.gen.ts`              |
-| `bun run generate-routes`             | Generate `src/routeTree.gen.ts` without building                     |
-| `bun run typecheck`                   | `tsc --noEmit` (fails in a fresh clone until routes are generated)   |
-| `bun run test` / `bun run test:watch` | Vitest: unit, DOM, and Workers-runtime projects                      |
-| `bun run test:coverage`               | Tests with coverage (what CI runs)                                   |
-| `bun run coverage:diff`               | Fails if changed code is < 90% covered (run after `test:coverage`)   |
-| `bun run lint` / `bun run lint:fix`   | oxlint, including layer-boundary rules                               |
-| `bun run fmt` / `bun run fmt:check`   | oxfmt                                                                |
-| `bun run db:generate`                 | SQL migration from `src/db/schema.ts` changes                        |
-| `bun run auth:generate`               | Regenerate auth tables in `src/db/schema.ts` from Better Auth config |
-| `bun run cf-typegen`                  | Regenerate Worker types after `wrangler.jsonc` or `.env` key changes |
+| Command                               | Use                                                                   |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `bun run dev`                         | Run locally on :3000 (needs `docker compose up -d`, `wrangler login`) |
+| `bun run build`                       | Production build; also generates `src/routeTree.gen.ts`               |
+| `bun run generate-routes`             | Generate `src/routeTree.gen.ts` without building                      |
+| `bun run typecheck`                   | `tsc --noEmit` (fails in a fresh clone until routes are generated)    |
+| `bun run test` / `bun run test:watch` | Vitest: unit, DOM, and Workers-runtime projects                       |
+| `bun run test:coverage`               | Tests with coverage (what CI runs)                                    |
+| `bun run coverage:diff`               | Fails if changed code is < 90% covered (run after `test:coverage`)    |
+| `bun run lint` / `bun run lint:fix`   | oxlint, including layer-boundary rules                                |
+| `bun run fmt` / `bun run fmt:check`   | oxfmt                                                                 |
+| `bun run db:generate`                 | SQL migration from `src/db/schema.ts` changes                         |
+| `bun run auth:generate`               | Regenerate auth tables in `src/db/schema.ts` from Better Auth config  |
+| `bun run cf-typegen`                  | Regenerate Worker types after `wrangler.jsonc` or `.env` key changes  |
 
 **Done means CI passes.** Before committing, run what CI runs (`.github/actions/check`):
 `bun run lint && bun run fmt:check && bun run test:coverage && bun run coverage:diff`
@@ -61,7 +61,8 @@ load docs you don't need.
 2. Anything that must never reach the browser is named `*.server.ts`.
 3. Use `#/` for imports across folders. `../` imports are a lint error.
 4. Every server function touching user data uses `authMiddleware` and scopes queries by
-   `context.user.id`. Route guards do not protect server functions.
+   `context.user.id`. Route guards do not protect server functions. Agents are reached only
+   through `authorizeAgentRequest`; name instances `<userId>` or `<userId>:<key>`.
 5. Never create a DB client or auth instance at module scope. Use `getDb()` / `getAuth()`.
 6. Schema changes ship with a migration from `bun run db:generate`, and must be backward compatible
    with the previous release (expand, then contract). Never edit an applied migration.

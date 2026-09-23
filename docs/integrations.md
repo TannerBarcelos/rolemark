@@ -21,6 +21,7 @@ configured in `wrangler.jsonc`, and needs no extra vendor account or secret.
 | Bot protection on public forms              | Turnstile                                        |
 | LLM calls: routing, caching, logs, limits   | AI Gateway in front of every provider            |
 | Hosted models, embeddings                   | Workers AI                                       |
+| AI agents (stateful, realtime, scheduled)   | Agents SDK on Durable Objects                    |
 | Vector search                               | Vectorize                                        |
 | Logs and traces                             | Workers Logs / Traces (`observability` is on)    |
 
@@ -45,7 +46,7 @@ Application code depends on an interface we own (the **port**), never on a vendo
 gets one **adapter** that implements the port. Swapping a provider means writing a new adapter and
 changing one factory line; no call site changes.
 
-Layout, per capability (created with the first capability; see "Adding `src/services/`" below):
+Layout, per capability (see "The `services/` layer" below):
 
 ```
 src/services/email/
@@ -96,74 +97,89 @@ Rules:
 
 - The port uses our domain types. Vendor types, errors, and response shapes never cross it;
   adapters translate them.
-- Adapters are created per request through a `get<Capability>()` accessor, same as `getDb()`.
-  Never at module scope.
+- Adapters that hold I/O objects (sockets, clients with connections) are created per request
+  through a `get<Capability>()` accessor, like `getDb()`. Adapters over a Worker binding (`env.AI`,
+  `env.BUCKET`) hold no sockets and can be created per call, like `getModel()`. Never at module
+  scope either way.
 - Keep ports small and shaped by what the app needs today, not by everything the vendor offers.
   Add methods when a caller needs them.
 - Don't wrap what already abstracts the provider: Drizzle (the database), Better Auth (identity),
-  and LangChain chat models (LLMs) are already ports. Wrapping them again adds indirection with no
-  new swap point.
+  and the AI SDK's `LanguageModel` (LLMs) are already ports. Wrapping them again adds indirection
+  with no new swap point.
 - Flexibility applies at seams (providers, I/O, external APIs). Inside the app, prefer plain
   functions and concrete types; no interface with one implementation and no second caller.
 
-### Adding `src/services/`
+### The `services/` layer
 
-It's a new layer: `functions/` and `middleware/` call services, services may use `db/` and `lib/`,
-and `auth/` may use services (for example, to send verification email). Place it between `auth/`
-and `db/`:
-
-`routes → components/hooks → functions → middleware → auth → services → db → lib`
-
-When you create it, in the same PR: add an `src/services/**` override to `.oxlintrc.json`
-forbidding imports from every layer above it, add `#/services/*` to the forbidden list of the
-`db/` override, add a `components/hooks` restriction on `#/services/**/*.server`, and add the row
-to the layer table in [architecture.md](architecture.md#layers).
+`src/services/<capability>/` holds ports and adapters. It sits between `auth/` and `db/`:
+`functions/`, `middleware/`, and `auth/` may call services; services may use `db/` and `lib/`.
+Client code (`components/`, `hooks/`) may not import services at all; it reaches them through
+server functions. `.oxlintrc.json` enforces both.
 
 ## AI features
 
-Use the LangChain JS ecosystem for orchestration and Cloudflare for everything under it. LangChain
-gives one model interface across providers, structured output, tool calling, retrieval, and agent
-orchestration. Cloudflare supplies Workers AI as one provider among several, AI Gateway in front of
-all of them, and Vectorize, Queues, and Workflows around them. All packages in the table are
-installed.
+AI runs entirely on Cloudflare. Everything below is installed; `env.AI` is bound in both
+environments.
 
-| Need                                 | Use                                                                     |
-| ------------------------------------ | ----------------------------------------------------------------------- |
-| Chat model, provider-agnostic        | `initChatModel` from `langchain`, typed as `BaseChatModel`              |
-| Cloudflare-hosted models             | `ChatCloudflareWorkersAI` from `@langchain/cloudflare`                  |
-| Provider packages                    | `@langchain/anthropic`, `@langchain/openai`, `@langchain/cloudflare`, … |
-| Structured output                    | `model.withStructuredOutput(zodSchema)`                                 |
-| Agents, multi-step or stateful flows | LangGraph (`@langchain/langgraph`)                                      |
-| Embeddings / vector store            | `@langchain/cloudflare` (Workers AI embeddings, Vectorize)              |
+| Need                                         | Use                                                                                                            |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| One-shot calls: generate, extract, summarize | AI SDK (`ai`) `generateText` / `streamText` with `getModel()`                                                  |
+| Models                                       | Workers AI through `workers-ai-provider` (`@cf/...` ids)                                                       |
+| Logs, caching, rate limits, spend controls   | AI Gateway (`AI_GATEWAY_ID`)                                                                                   |
+| Stateful agents: memory, tools, realtime     | Agents SDK (`agents`): an `Agent` class is a Durable Object with SQLite; `useAgent` (`agents/react`) in the UI |
+| Chat UI backed by an agent                   | `AIChatAgent` (`@cloudflare/ai-chat`) + `useAgentChat` (`@cloudflare/ai-chat/react`)                           |
+| Scheduled or long-running agent work         | The agent's `this.schedule(...)`, or Workflows for multi-step durable jobs                                     |
+| Embeddings, retrieval                        | Workers AI embedding models + Vectorize                                                                        |
+| Structured output                            | `generateText` with `output: Output.object({ schema })` (Zod); not the deprecated `generateObject`             |
 
-Layout: `src/services/ai/` holds model setup (`ai.server.ts` with `getChatModel()`), prompts, and
-chains/graphs. Server functions call into it; nothing AI-related runs in the browser.
+Why this shape: the Agents SDK and `AIChatAgent` are built on the AI SDK, so one model interface
+(`LanguageModel`) serves both one-shot calls and agents. `workers-ai-provider` implements it over
+the `env.AI` binding: no API keys, and AI Gateway is one option away.
+
+### Models: `getModel()`
+
+`src/services/ai/model.server.ts` is the only place that builds a model. `AI_MODEL` and
+`AI_GATEWAY_ID` in `wrangler.jsonc` configure it, so changing model or gateway is a config change.
 
 ```ts
-// src/services/ai/ai.server.ts
-import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { env } from "cloudflare:workers";
-import { initChatModel } from "langchain";
+import { generateText } from "ai";
 
-/**
- * Model ids live in config ("<provider>:<model-id>"), so changing provider or model is a config
- * change. Point the provider's base URL at AI Gateway; the option name differs per provider
- * package, so check it in the package's docs.
- */
-export async function getChatModel(): Promise<BaseChatModel> {
-  return initChatModel(env.AI_MODEL, { temperature: 0 });
-}
+import { getModel } from "#/services/ai/model.server";
+
+const { text } = await generateText({ model: getModel(), prompt, maxOutputTokens: 500 });
 ```
 
-Rules:
+Third-party models (`"anthropic/..."`, `"openai/..."`) can route through the same binding and AI
+Gateway, but `workers-ai-provider` marks that path experimental. Stay on `@cf/...` models unless a
+feature needs one Workers AI doesn't host, and ask first.
 
-- Code depends on `BaseChatModel` / runnables, never on a provider class. The model id and gateway
-  URL come from `wrangler.jsonc` vars, not code.
-- Route every provider call through AI Gateway.
+### Agents
+
+An agent is a class in `src/agents/<name>-agent.ts` extending `Agent` (or `AIChatAgent`). Each
+instance is a Durable Object with its own SQLite state, reached at
+`/agents/<agent-name>/<instance-name>` over WebSocket or HTTP. `src/server.ts` routes those URLs
+before the app. Adding one: [recipes.md](recipes.md#ai-agent).
+
+**Access control.** Agent URLs don't go through server functions or `authMiddleware`.
+`src/server.ts` runs `authorizeAgentRequest` (`src/auth/agent-access.server.ts`) on every agent
+connection and request: the caller must be signed in, and the instance name must be their user id
+or start with `<userId>:` (`u123:chat-42`). Name instances that way; never name an instance
+something a client can guess for another user. Inside the agent, still scope every DB query by that
+owner id.
+
+`bun run dev` needs `wrangler login`, because the AI binding is always remote. Tests never call it:
+the `workers` test project turns remote bindings off, and tests pass a fake `AI` binding
+(`src/services/ai/model.worker.test.ts`).
+
+### Rules
+
+- Build models only with `getModel()`. Model ids and gateway come from `wrangler.jsonc` vars.
+- Set `AI_GATEWAY_ID` in every deployed environment so calls are logged, cached, and rate-limited.
 - Prompts are versioned files in `src/services/ai/prompts/`, not strings inlined in handlers.
-- Validate model output with a Zod schema (`withStructuredOutput`). Treat it as untrusted input:
-  never execute it, never interpolate it into SQL or HTML, and give tools only the access the
-  calling user already has (queries scoped by `context.user.id`).
-- Stream responses to the UI. Anything that can outlast a request (batch jobs, long agent runs)
-  goes to Queues or Workflows.
-- Log token usage and latency per call; set timeouts and a max-token budget on every call.
+- Validate model output with a Zod schema. Treat it as untrusted input: never execute it, never
+  interpolate it into SQL or HTML, and give tools only the access the calling user already has.
+- Stream responses to the UI. Work that can outlast a request goes to the agent's scheduler, Queues,
+  or Workflows, never an unawaited promise.
+- Set `maxOutputTokens` and an abort timeout on every call. Log token usage and latency.
+- Agents' `@callable()` methods are public RPC for whoever holds the connection: validate their
+  arguments with Zod.

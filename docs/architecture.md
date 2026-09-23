@@ -12,13 +12,20 @@ never above.
 | `hooks/`             | React hooks                                                | client-safe      |
 | `functions/`         | `createServerFn` RPCs (`*.functions.ts`)                   | server (RPC)     |
 | `middleware/`        | `createMiddleware` (`*.middleware.ts`)                     | server           |
+| `agents/`            | Agents SDK classes (Durable Objects), `*-agent.ts`         | server (DO)      |
 | `auth/`              | Better Auth config, `getAuth()`, browser client, CLI entry | mixed, see below |
+| `services/`          | Ports and adapters per capability (`ai/`, …)               | server           |
 | `db/`                | Drizzle schema, `createDb`, `getDb()`                      | server           |
 | `lib/`               | Dependency-free helpers; imports only `lib/`               | both             |
 
-`components/` and `hooks/` sit side by side and may import each other.
+`components/` and `hooks/` sit side by side and may import each other. `agents/` sits beside
+`functions/`: both are server entry points, and neither imports the other.
 
-Other files: `src/router.tsx` (router factory; creates the per-request `QueryClient`),
+Full order: `routes → components/hooks → functions/agents → middleware → auth → services → db → lib`.
+
+Other files: `src/server.ts` (the Worker entry: routes `/agents/*` to agents behind
+`authorizeAgentRequest`, everything else to Start, and exports agent classes),
+`src/router.tsx` (router factory; creates the per-request `QueryClient`),
 `src/styles.css` (Tailwind and design tokens), `src/routeTree.gen.ts` (generated, gitignored),
 `src/test/` (Vitest setup only; app code never imports it). Tests sit next to the file they test
 ([testing.md](testing.md)). `components/ui/` holds UI primitives ([ui.md](ui.md)).
@@ -54,7 +61,8 @@ and a row to the table above.
 Workers forbid sharing I/O objects (sockets) across requests, so:
 
 - `getDb()` (`db/db.server.ts`) and `getAuth()` (`auth/auth.server.ts`) cache one instance per
-  incoming `Request` in a `WeakMap`. `beforeLoad`, middleware and the handler share it.
+  incoming `Request` in a `WeakMap`. Code that runs before Start's request context exists
+  (`src/server.ts`) uses `getDbFor(request)` / `getAuthFor(request)` instead. `beforeLoad`, middleware and the handler share it.
   `getAuth()` builds on `getDb()`, so auth and app queries share one client.
 - Never create a DB client or auth instance at module scope.
 - Hyperdrive pools the real Postgres connections, so a client per request is cheap.

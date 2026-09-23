@@ -9,7 +9,14 @@ const clients = new WeakMap<Request, Db>();
 
 /** The database client for the current request. Server-only. */
 export function getDb(): Db {
-  const request = getRequest();
+  return getDbFor(getRequest());
+}
+
+/**
+ * The database client for `request`. For code that runs before Start's request context exists,
+ * such as the Worker entry (src/server.ts). Everywhere else, use getDb().
+ */
+export function getDbFor(request: Request): Db {
   let db = clients.get(request);
   if (!db) {
     db = createDb(env.HYPERDRIVE.connectionString);
