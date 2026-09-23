@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 
 import { account } from "#/db/schema";
 import { authMiddleware } from "#/middleware/auth.middleware";
-import { getDb } from "#/auth/auth.server";
+import { getDb } from "#/db/db.server";
 
 /** Sign-in providers linked to the current user (e.g. ["google"]). */
 export const getLinkedProviders = createServerFn({ method: "GET" })

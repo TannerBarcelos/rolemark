@@ -7,5 +7,120 @@
   "rules": {},
   "env": {
     "builtin": true
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/lib/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["#/**", "!#/lib/**"],
+                "message": "lib/ holds dependency-free helpers and may only import from lib/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/db/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "#/auth/*",
+                  "#/middleware/*",
+                  "#/functions/*",
+                  "#/hooks/*",
+                  "#/components/*",
+                  "#/routes/*"
+                ],
+                "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/auth/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "#/middleware/*",
+                  "#/functions/*",
+                  "#/hooks/*",
+                  "#/components/*",
+                  "#/routes/*"
+                ],
+                "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/middleware/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["#/functions/*", "#/hooks/*", "#/components/*", "#/routes/*"],
+                "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/functions/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["#/hooks/*", "#/components/*", "#/routes/*"],
+                "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/hooks/**", "src/components/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["#/routes/*"],
+                "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              },
+              {
+                "group": ["#/db/*", "#/middleware/*", "#/auth/*", "!#/auth/auth-client"],
+                "message": "Server-only module: client code must call a server function in #/functions instead."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

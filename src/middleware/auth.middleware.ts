@@ -4,6 +4,7 @@ import { getRequestHeaders, setResponseStatus } from "@tanstack/react-start/serv
 import { getAuth } from "#/auth/auth.server";
 
 /**
+ * Function middleware: runs only on server functions that list it in `.middleware([...])`.
  * Attach to every server function that reads or writes user data.
  * Route guards only protect page UI; server functions are callable directly over HTTP.
  * Handlers receive `context.session` and `context.user`; always scope queries by `context.user.id`.

@@ -24,17 +24,18 @@ bun run dev                 # runs the Worker locally in workerd
 
 ## Auth layout
 
-| Path                                 | Purpose                                                                |
-| ------------------------------------ | ---------------------------------------------------------------------- |
-| `src/auth/auth.ts`                   | `createAuth(db, env)`: Better Auth config (Google, account linking)    |
-| `src/auth/auth.server.ts`            | `getAuth()` / `getDb()`: per-request instances built from Worker `env` |
-| `src/middleware/auth.middleware.ts`  | `authMiddleware` for protected server functions                        |
-| `src/auth/auth-client.ts`            | Browser client (`authClient.signIn.social`, `authClient.signOut`)      |
-| `src/functions/auth.functions.ts`    | `getSession` server fn                                                 |
-| `src/functions/account.functions.ts` | Example protected server function                                      |
-| `src/routes/api/auth/$.ts`           | Mounts Better Auth's endpoints at `/api/auth/*`                        |
-| `src/routes/_authenticated.tsx`      | Route guard; anything under `_authenticated/` requires a session       |
-| `src/db/schema.ts`                   | Auth tables (regenerate with `bun run auth:generate`)                  |
+| Path                                 | Purpose                                                               |
+| ------------------------------------ | --------------------------------------------------------------------- |
+| `src/auth/auth.ts`                   | `createAuth(db, env)`: Better Auth config (Google, account linking)   |
+| `src/auth/auth.server.ts`            | `getAuth()`: per-request Better Auth instance built from Worker `env` |
+| `src/db/db.server.ts`                | `getDb()`: per-request Drizzle client over Hyperdrive                 |
+| `src/middleware/auth.middleware.ts`  | `authMiddleware` for protected server functions                       |
+| `src/auth/auth-client.ts`            | Browser client (`authClient.signIn.social`, `authClient.signOut`)     |
+| `src/functions/auth.functions.ts`    | `getSession` server fn                                                |
+| `src/functions/account.functions.ts` | Example protected server function                                     |
+| `src/routes/api/auth/$.ts`           | Mounts Better Auth's endpoints at `/api/auth/*`                       |
+| `src/routes/_authenticated.tsx`      | Route guard; anything under `_authenticated/` requires a session      |
+| `src/db/schema.ts`                   | Auth tables (regenerate with `bun run auth:generate`)                 |
 
 Route guards only protect pages. Every server function that touches user data must use
 `authMiddleware` and scope queries by `context.user.id`:
