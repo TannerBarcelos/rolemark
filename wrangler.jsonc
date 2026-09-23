@@ -7,6 +7,8 @@
   "observability": { "enabled": true },
   "hyperdrive": [
     {
+      // CRITICAL: query caching is on by default and causes stale read-after-write.
+      // See docs/known-concerns.md before the first production deploy.
       "binding": "HYPERDRIVE",
       // Create with: wrangler hyperdrive create rolemark-db --connection-string="<postgres url>"
       "id": "REPLACE_WITH_HYPERDRIVE_ID",

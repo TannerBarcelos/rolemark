@@ -57,6 +57,9 @@ instance at module scope; always go through `getDb()` / `getAuth()`.
 
 ## Deploying to Cloudflare
 
+> **Before the first production deploy, read [docs/known-concerns.md](docs/known-concerns.md).**
+> Hyperdrive's default query cache causes stale reads after writes.
+
 1. Provision Postgres (Neon, Supabase, RDS, …) and run `DATABASE_URL=<prod url> bun run db:migrate`.
 2. `bunx wrangler hyperdrive create rolemark-db --connection-string="<prod url>"` and put the id in
    `wrangler.jsonc`.
