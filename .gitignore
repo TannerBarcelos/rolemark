@@ -12,3 +12,6 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+!.env.example
+.dev.vars*
+!.dev.vars.example

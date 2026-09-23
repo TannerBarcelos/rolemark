@@ -9,8 +9,8 @@ set -euo pipefail
 
 dist_dir="${1:?usage: deploy.sh <dist-dir>}"
 
-if [ ! -f "$dist_dir/server/server.js" ]; then
-  echo "error: $dist_dir does not look like a build (missing server/server.js)" >&2
+if [ ! -f "$dist_dir/server/wrangler.json" ]; then
+  echo "error: $dist_dir does not look like a build (missing server/wrangler.json)" >&2
   exit 1
 fi
 
