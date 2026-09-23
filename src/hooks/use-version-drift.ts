@@ -7,8 +7,6 @@ const POLL_INTERVAL_MS = 60_000;
 export type VersionDrift = {
   /** True once this tab is known to be running an outdated bundle. */
   isStale: boolean;
-  /** The build the server is currently serving, when known. */
-  liveBuild: BuildInfo | null;
   reload: () => void;
 };
 
@@ -98,5 +96,5 @@ export function useVersionDrift(): VersionDrift {
     window.location.reload();
   }, []);
 
-  return { isStale, liveBuild, reload };
+  return { isStale, reload };
 }
