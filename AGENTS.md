@@ -1,110 +1,52 @@
-<!-- intent-skills:start -->
-
-# TanStack Intent - before editing files, run the matching guidance command.
-
-tanstackIntent:
-
-- id: "@tanstack/react-start#lifecycle/migrate-from-nextjs"
-  run: "bunx @tanstack/intent@latest load @tanstack/react-start#lifecycle/migrate-from-nextjs"
-  for: "Step-by-step migration from Next.js App Router to TanStack Start: route definition conversion, API mapping, server function conversion from Server Actions, middleware conversion, data fetching pattern changes."
-- id: "@tanstack/react-start#react-start"
-  run: "bunx @tanstack/intent@latest load @tanstack/react-start#react-start"
-  for: "React bindings for TanStack Start: createStart, StartClient, StartServer, React-specific imports, re-exports from @tanstack/react-router, full project setup with React, useServerFn hook."
-- id: "@tanstack/react-start#react-start/server-components"
-  run: "bunx @tanstack/intent@latest load @tanstack/react-start#react-start/server-components"
-  for: "Implement, review, debug, and refactor TanStack Start React Server Components in React 19 apps. Use when tasks mention @tanstack/react-start/rsc, renderServerComponent, createCompositeComponent, CompositeComponent, renderToReadableStream, createFromReadableStream, createFromFetch, Composite Components, React Flight streams, loader or query owned RSC caching, router.invalidate, structuralSharing: false, selective SSR, stale names like renderRsc or .validator, or migration from Next App Router RSC patterns. Do not use for generic SSR or non-TanStack RSC frameworks except brief comparison."
-- id: "@tanstack/router-core#router-core"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core"
-  for: "Framework-agnostic core concepts for TanStack Router: route trees, createRouter, createRoute, createRootRoute, createRootRouteWithContext, addChildren, Register type declaration, route matching, route sorting, file naming conventions. Entry point for all router skills."
-- id: "@tanstack/router-core#router-core/auth-and-guards"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/auth-and-guards"
-  for: "Route protection with beforeLoad, redirect()/throw redirect(), isRedirect helper, authenticated layout routes (_authenticated), non-redirect auth (inline login), RBAC with roles and permissions, auth provider integration (Auth0, Clerk, Supabase), router context for auth state."
-- id: "@tanstack/router-core#router-core/code-splitting"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/code-splitting"
-  for: "Automatic code splitting (autoCodeSplitting), .lazy.tsx convention, createLazyFileRoute, createLazyRoute, lazyRouteComponent, getRouteApi for typed hooks in split files, codeSplitGroupings per-route override, splitBehavior programmatic config, critical vs non-critical properties."
-- id: "@tanstack/router-core#router-core/data-loading"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/data-loading"
-  for: "Route loader option, loaderDeps for cache keys, staleTime/gcTime/ defaultPreloadStaleTime SWR caching, pendingComponent/pendingMs/ pendingMinMs, errorComponent/onError/onCatch, beforeLoad, router context and createRootRouteWithContext DI pattern, router.invalidate, Await component, deferred data loading with unawaited promises."
-- id: "@tanstack/router-core#router-core/navigation"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/navigation"
-  for: "Link component, useNavigate, Navigate component, router.navigate, ToOptions/NavigateOptions/LinkOptions, from/to relative navigation, activeOptions/activeProps, preloading (intent/viewport/render), preloadDelay, navigation blocking (useBlocker, Block), createLink, linkOptions helper, scroll restoration, MatchRoute."
-- id: "@tanstack/router-core#router-core/not-found-and-errors"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/not-found-and-errors"
-  for: "notFound() function, notFoundComponent, defaultNotFoundComponent, notFoundMode (fuzzy/root), errorComponent, CatchBoundary, CatchNotFound, isNotFound, NotFoundRoute (deprecated), route masking (mask option, createRouteMask, unmaskOnReload)."
-- id: "@tanstack/router-core#router-core/path-params"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/path-params"
-  for: "Dynamic path segments ($paramName), splat routes ($ / _splat), optional params ({-$paramName}), prefix/suffix patterns ({$param}.ext), useParams, params.parse/stringify, pathParamsAllowedCharacters, i18n locale patterns."
-- id: "@tanstack/router-core#router-core/search-params"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/search-params"
-  for: "validateSearch, search param validation with Zod/Valibot/ArkType adapters, fallback(), search middlewares (retainSearchParams, stripSearchParams), custom serialization (parseSearch, stringifySearch), search param inheritance, loaderDeps for cache keys, reading and writing search params."
-- id: "@tanstack/router-core#router-core/ssr"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/ssr"
-  for: "Non-streaming and streaming SSR, RouterClient/RouterServer, renderRouterToString/renderRouterToStream, createRequestHandler, defaultRenderHandler/defaultStreamHandler, HeadContent/Scripts components, head route option (meta/links/styles/scripts), ScriptOnce, automatic loader dehydration/hydration, memory history on server, data serialization, document head management."
-- id: "@tanstack/router-core#router-core/type-safety"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-core#router-core/type-safety"
-  for: "Full type inference philosophy (never cast, never annotate inferred values), Register module declaration, from narrowing on hooks and Link, strict:false for shared components, getRouteApi for code-split typed access, addChildren with object syntax for TS perf, LinkProps and ValidateLinkOptions type utilities, as const satisfies pattern."
-- id: "@tanstack/router-plugin#router-plugin"
-  run: "bunx @tanstack/intent@latest load @tanstack/router-plugin#router-plugin"
-  for: "TanStack Router bundler plugin for route generation and automatic code splitting. Supports Vite, Webpack, Rspack, and esbuild. Configures autoCodeSplitting, routesDirectory, target framework, and code split groupings."
-- id: "@tanstack/start-client-core#start-core"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-client-core#start-core"
-  for: "Core overview for TanStack Start: tanstackStart() Vite plugin, getRouter() factory, root route document shell (HeadContent, Scripts, Outlet), client/server entry points, routeTree.gen.ts, tsconfig configuration. Entry point for all Start skills."
-- id: "@tanstack/start-client-core#start-core/auth-server-primitives"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-client-core#start-core/auth-server-primitives"
-  for: "Server-side authentication primitives for TanStack Start: session cookies (HttpOnly, Secure, SameSite, __Host- prefix), session read/issue/destroy via createServerFn and middleware, OAuth authorization-code flow with state and PKCE, password-reset enumeration defense, CSRF for non-GET RPCs, rate limiting auth endpoints, session rotation on privilege change. Pairs with router-core/auth-and-guards for the routing side."
-- id: "@tanstack/start-client-core#start-core/deployment"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-client-core#start-core/deployment"
-  for: "Deploy to Cloudflare Workers, Netlify, Vercel, Node.js/Docker, Bun, Railway. Selective SSR (ssr option per route), SPA mode, static prerendering, ISR with Cache-Control headers, SEO and head management."
-- id: "@tanstack/start-client-core#start-core/execution-model"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-client-core#start-core/execution-model"
-  for: "Isomorphic-by-default principle, environment boundary functions (createServerFn, createServerOnlyFn, createClientOnlyFn, createIsomorphicFn), ClientOnly component, useHydrated hook, import protection, dead code elimination, environment variable safety (VITE_ prefix, process.env)."
-- id: "@tanstack/start-client-core#start-core/middleware"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-client-core#start-core/middleware"
-  for: "createMiddleware, request middleware (.server only), server function middleware (.client + .server), context passing via next({ context }), sendContext for client-server transfer, global middleware via createStart in src/start.ts, middleware factories, method order enforcement, fetch override precedence."
-- id: "@tanstack/start-client-core#start-core/server-functions"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-client-core#start-core/server-functions"
-  for: "createServerFn (GET/POST), validator (Zod or function), useServerFn hook, server context utilities (getRequest, getRequestHeader, setResponseHeader, setResponseStatus), error handling (throw errors, redirect, notFound), streaming, FormData handling, file organization (.functions.ts, .server.ts)."
-- id: "@tanstack/start-client-core#start-core/server-routes"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-client-core#start-core/server-routes"
-  for: "Server-side API endpoints using the server property on createFileRoute, HTTP method handlers (GET, POST, PUT, DELETE), createHandlers for per-handler middleware, handler context (request, params, context), request body parsing, response helpers, file naming for API routes."
-- id: "@tanstack/start-server-core#start-server-core"
-  run: "bunx @tanstack/intent@latest load @tanstack/start-server-core#start-server-core"
-  for: "Server-side runtime for TanStack Start: createStartHandler, request/response utilities (getRequest, setResponseHeader, setCookie, getCookie, useSession), three-phase request handling, AsyncLocalStorage context."
-- id: "@tanstack/virtual-file-routes#virtual-file-routes"
-  run: "bunx @tanstack/intent@latest load @tanstack/virtual-file-routes#virtual-file-routes"
-  for: "Programmatic route tree building as an alternative to filesystem conventions: rootRoute, index, route, layout, physical, defineVirtualSubtreeConfig. Use with TanStack Router plugin's virtualRouteConfig option."
-
-<!-- intent-skills:end -->
-
 # AGENTS.md
 
-## Source layout
+RoleMark: TanStack Start (React 19) on Cloudflare Workers, Better Auth (Google), Drizzle ORM,
+Postgres via Hyperdrive (Docker locally, PlanetScale in staging/production). Package manager: `bun`.
 
-Code is organized by layer. Imports only point **down** this stack; `bun run lint` enforces it
-(`no-restricted-imports` overrides in `.oxlintrc.json`).
+This file is a router. Read the doc for your task from the table below before editing; don't
+load docs you don't need.
 
-```
-routes/       file-based routes: compose everything below, keep logic thin
-components/   React components           ─┐ client-safe: never import db/, middleware/,
-hooks/        React hooks                ─┘ or server-only auth (auth-client.ts is fine)
-functions/    createServerFn RPCs (*.functions.ts): the only bridge from client to server
-middleware/   createMiddleware (*.middleware.ts): function or request middleware
-auth/         Better Auth config, per-request instance (auth.server.ts), browser client
-db/           Drizzle schema, client factory (client.server.ts), per-request client (db.server.ts)
-lib/          dependency-free helpers shared by client and server; imports only lib/
-```
+## Routing
 
-Rules of thumb:
+| When the task involves…                                                       | Read                                               |
+| ----------------------------------------------------------------------------- | -------------------------------------------------- |
+| Where a file goes, imports, layers, client vs server code                     | [docs/architecture.md](docs/architecture.md)       |
+| Adding a server function, route, middleware, hook, component, or table        | [docs/recipes.md](docs/recipes.md)                 |
+| Sessions, sign-in, route guards, `authMiddleware`, authorization              | [docs/auth.md](docs/auth.md)                       |
+| `src/db/schema.ts`, migrations, `drizzle/`, PlanetScale, Hyperdrive           | [docs/planetscale.md](docs/planetscale.md)         |
+| Branches, PRs, CI/CD, deploys, releases, hotfixes, build version / reload     | [docs/releases.md](docs/releases.md)               |
+| Deferred risks (stale reads, authz) to check before shipping data features    | [docs/known-concerns.md](docs/known-concerns.md)   |
+| Any TanStack Router/Start API (routes, loaders, server fns, middleware, SSR…) | [docs/tanstack-skills.md](docs/tanstack-skills.md) |
 
-- New server logic: a server fn in `functions/`, protected with `authMiddleware` from
-  `#/middleware/auth.middleware`, querying through `getDb()` from `#/db/db.server`.
-- Client code reaches the server only by calling a server function, never by importing
-  `*.server.ts`.
-- Name middleware by what it does and state its kind in the doc comment: `type: "function"`
-  runs only where attached; `type: "request"` runs on every request once registered in
-  `src/start.ts`.
-- Use `#/` imports across folders; `../` imports are a lint error so boundaries stay visible.
-  `./` is fine for siblings in the same folder.
-- Anything that must never reach the browser is named `*.server.ts` (`db/client.server.ts`,
-  `db/db.server.ts`, `auth/auth.server.ts`); TanStack Start's import protection fails the
-  client build if client code imports one.
+## Commands
+
+| Command                             | Use                                                                  |
+| ----------------------------------- | -------------------------------------------------------------------- |
+| `bun run dev`                       | Run locally in workerd on :3000 (needs `docker compose up -d`)       |
+| `bun run build`                     | Production build; also generates `src/routeTree.gen.ts`              |
+| `bun run generate-routes`           | Generate `src/routeTree.gen.ts` without building                     |
+| `bun run typecheck`                 | `tsc --noEmit` (fails in a fresh clone until routes are generated)   |
+| `bun run lint` / `bun run lint:fix` | oxlint, including layer-boundary rules                               |
+| `bun run fmt` / `bun run fmt:check` | oxfmt                                                                |
+| `bun run db:generate`               | SQL migration from `src/db/schema.ts` changes                        |
+| `bun run auth:generate`             | Regenerate auth tables in `src/db/schema.ts` from Better Auth config |
+| `bun run cf-typegen`                | Regenerate Worker types after `wrangler.jsonc` or `.env` key changes |
+
+**Done means CI passes.** Before committing, run what CI runs (`.github/actions/check`):
+`bun run lint && bun run fmt:check && bun run db:generate` (must leave `drizzle/` unchanged)
+`&& bun run build && bun run typecheck`.
+
+## Hard rules
+
+1. Imports point **down** the layer stack; lint enforces it. Details: docs/architecture.md.
+2. Anything that must never reach the browser is named `*.server.ts`.
+3. Use `#/` for imports across folders. `../` imports are a lint error.
+4. Every server function touching user data uses `authMiddleware` and scopes queries by
+   `context.user.id`. Route guards do not protect server functions.
+5. Never create a DB client or auth instance at module scope. Use `getDb()` / `getAuth()`.
+6. Schema changes ship with a migration from `bun run db:generate`, and must be backward compatible
+   with the previous release (expand, then contract). Never edit an applied migration.
+7. Never hand-edit generated files: `src/routeTree.gen.ts`, `worker-configuration.d.ts`, the auth
+   tables in `src/db/schema.ts`.
+8. PRs target `develop`. Only `develop` and `hotfix/*` may target `main`. Never rename `cd.yml`.
+9. Never commit secrets. `.env` is local only; deployed secrets go through `wrangler secret put`.
