@@ -13,11 +13,18 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt:check": "oxfmt --check",
+    "auth:generate": "auth generate --config src/lib/auth.server.ts --output src/db/schema.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@tanstack/react-router": "latest",
     "@tanstack/react-start": "latest",
+    "better-auth": "^1.7.5",
+    "drizzle-orm": "^0.45.3",
+    "postgres": "^3.4.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -27,6 +34,8 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "auth": "^1.7.5",
+    "drizzle-kit": "^0.31.11",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "typescript": "^6.0.2",

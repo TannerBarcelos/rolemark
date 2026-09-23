@@ -1,8 +1,13 @@
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 
+import { getSession } from "#/lib/auth.functions";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
+  beforeLoad: async () => {
+    const session = await getSession();
+    return { session };
+  },
   head: () => ({
     meta: [
       {
