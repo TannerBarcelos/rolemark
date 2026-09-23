@@ -17,5 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Diff coverage needs the merge base with the PR's target branch.
+          fetch-depth: 0
 
       - uses: ./.github/actions/check
+        with:
+          coverage-base: origin/${{ github.base_ref }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ github.event.pull_request.number }}
+          path: coverage
+          retention-days: 7
+          if-no-files-found: ignore

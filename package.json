@@ -22,7 +22,9 @@
     "deploy": "vite build && wrangler deploy",
     "cf-typegen": "wrangler types",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "coverage:diff": "bun scripts/diff-coverage.ts"
   },
   "dependencies": {
     "@langchain/anthropic": "^1.5.11",
@@ -65,6 +67,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-istanbul": "^4.1.0",
     "@vitest/runner": "^4.1.0",
     "@vitest/snapshot": "^4.1.0",
     "auth": "^1.7.5",

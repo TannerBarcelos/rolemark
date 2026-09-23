@@ -95,6 +95,8 @@ data.
 
 ## Scope of a change
 
+- Start from failing tests that capture the task's scope, and ship with >= 90% of the changed code
+  covered ([testing.md](testing.md#test-driven-90-of-new-code)).
 - Do what the task asks. Don't refactor, rename, or reformat unrelated code in the same PR; note it
   instead.
 - Ask before adding a top-level `src/` folder, a new third-party service, or a new state or styling

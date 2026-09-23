@@ -14,12 +14,21 @@ export default defineConfig({
     __APP_BUILD_SEQ__: JSON.stringify(1),
   },
   test: {
+    // Istanbul, not v8: the Workers pool can't collect v8 coverage. New code must be >= 90%
+    // covered; `bun run coverage:diff` enforces that on changed lines (docs/testing.md).
+    coverage: {
+      provider: "istanbul",
+      // Listing sources here also reports files no test imports, as 0% covered.
+      include: ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
+      exclude: ["**/*.test.{ts,tsx}", "src/test/**", "src/routeTree.gen.ts", "**/*.d.ts"],
+      reporter: ["text-summary", "lcov"],
+    },
     projects: [
       {
         extends: true,
         test: {
           name: "unit",
-          include: ["src/**/*.test.ts"],
+          include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
           exclude: ["src/**/*.worker.test.ts"],
           environment: "node",
         },

@@ -19,7 +19,7 @@ load docs you don't need.
 | Any TanStack Router/Start API (routes, loaders, server fns, middleware, SSR…) | [docs/tanstack-skills.md](docs/tanstack-skills.md) |
 | Writing or reviewing any code: library defaults, TypeScript, React, errors    | [docs/conventions.md](docs/conventions.md)         |
 | Styling, components, design tokens, Tailwind, React Aria, accessibility       | [docs/ui.md](docs/ui.md)                           |
-| Writing or running tests, Vitest projects, what to test                       | [docs/testing.md](docs/testing.md)                 |
+| Writing any code (TDD is required), tests, coverage gate, Vitest projects     | [docs/testing.md](docs/testing.md)                 |
 | Infra choices, external providers/SDKs, bindings, AI/LLM features, Sentry     | [docs/integrations.md](docs/integrations.md)       |
 
 ## Defaults
@@ -43,6 +43,8 @@ load docs you don't need.
 | `bun run generate-routes`             | Generate `src/routeTree.gen.ts` without building                     |
 | `bun run typecheck`                   | `tsc --noEmit` (fails in a fresh clone until routes are generated)   |
 | `bun run test` / `bun run test:watch` | Vitest: unit, DOM, and Workers-runtime projects                      |
+| `bun run test:coverage`               | Tests with coverage (what CI runs)                                   |
+| `bun run coverage:diff`               | Fails if changed code is < 90% covered (run after `test:coverage`)   |
 | `bun run lint` / `bun run lint:fix`   | oxlint, including layer-boundary rules                               |
 | `bun run fmt` / `bun run fmt:check`   | oxfmt                                                                |
 | `bun run db:generate`                 | SQL migration from `src/db/schema.ts` changes                        |
@@ -50,8 +52,8 @@ load docs you don't need.
 | `bun run cf-typegen`                  | Regenerate Worker types after `wrangler.jsonc` or `.env` key changes |
 
 **Done means CI passes.** Before committing, run what CI runs (`.github/actions/check`):
-`bun run lint && bun run fmt:check && bun run test && bun run db:generate` (must leave
-`drizzle/` unchanged) `&& bun run build && bun run typecheck`.
+`bun run lint && bun run fmt:check && bun run test:coverage && bun run coverage:diff`
+`&& bun run db:generate` (must leave `drizzle/` unchanged) `&& bun run build && bun run typecheck`.
 
 ## Hard rules
 
@@ -67,3 +69,5 @@ load docs you don't need.
    tables in `src/db/schema.ts`.
 8. PRs target `develop`. Only `develop` and `hotfix/*` may target `main`. Never rename `cd.yml`.
 9. Never commit secrets. `.env` is local only; deployed secrets go through `wrangler secret put`.
+10. Work test-first (red, green, refactor), and cover at least 90% of changed lines and branches.
+    CI enforces it with `bun run coverage:diff`. Details: docs/testing.md.

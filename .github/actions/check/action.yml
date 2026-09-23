@@ -1,5 +1,13 @@
 name: Install and check
-description: Install dependencies, lint, format-check, test, check migrations, build, and typecheck.
+description: Install dependencies, lint, format-check, test with coverage, check migrations, build, and typecheck.
+
+inputs:
+  coverage-base:
+    description: >-
+      Git ref to measure diff coverage against (e.g. origin/develop). When set, changed lines must
+      be at least 90% covered. Needs full history (actions/checkout with fetch-depth 0).
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -17,9 +25,18 @@ runs:
     - shell: bash
       run: bun run fmt:check
 
-    # Unit, DOM, and Workers-runtime tests (vitest.config.ts, docs/testing.md).
+    # Unit, DOM, and Workers-runtime tests with coverage (vitest.config.ts, docs/testing.md).
     - shell: bash
-      run: bun run test
+      run: bun run test:coverage
+
+    # New and changed code must be >= 90% covered (lines and branches). The report is also
+    # written to the job summary.
+    - name: Check diff coverage
+      if: inputs.coverage-base != ''
+      shell: bash
+      env:
+        COVERAGE_BASE: ${{ inputs.coverage-base }}
+      run: bun run coverage:diff
 
     # CD applies drizzle/ as-is, so a schema.ts change without its migration would
     # deploy code that expects columns the database never gets.

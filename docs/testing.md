@@ -1,14 +1,45 @@
 # Testing
 
-Vitest, configured in `vitest.config.ts` (separate from `vite.config.ts`). CI runs `bun run test`
-in `.github/actions/check`, so a failing test blocks merge and deploy.
+Vitest, configured in `vitest.config.ts` (separate from `vite.config.ts`). Every PR (`ci.yml`) and
+every deploy (`cd.yml`) runs the suite with coverage through `.github/actions/check`. A failing
+test blocks merge and deploy, and on PRs so does diff coverage under 90%.
 
-| Command                     | Use                                    |
-| --------------------------- | -------------------------------------- |
-| `bun run test`              | Run every project once (what CI runs)  |
-| `bun run test:watch`        | Watch mode                             |
-| `bunx vitest run <path>`    | One file or folder                     |
-| `bunx vitest --project dom` | One project (`unit`, `dom`, `workers`) |
+| Command                     | Use                                                         |
+| --------------------------- | ----------------------------------------------------------- |
+| `bun run test`              | Run every project once                                      |
+| `bun run test:watch`        | Watch mode, for the TDD loop                                |
+| `bun run test:coverage`     | Run once with coverage; writes `coverage/lcov.info` (CI)    |
+| `bun run coverage:diff`     | Gate: changed lines and branches vs `origin/develop` >= 90% |
+| `bunx vitest run <path>`    | One file or folder                                          |
+| `bunx vitest --project dom` | One project (`unit`, `dom`, `workers`)                      |
+
+## Test-driven, 90% of new code
+
+Write the test first. For every change:
+
+1. **Red.** Turn the task's requirements into failing tests: the happy path, each edge case and
+   error the scope names, and authorization for anything touching user data. Run them and watch
+   them fail for the right reason (a missing function or wrong result, not a typo).
+2. **Green.** Write the least code that passes.
+3. **Refactor** with the tests green.
+4. **Check coverage:** `bun run test:coverage && bun run coverage:diff`. Every uncovered line it
+   lists is either behavior the tests missed (add a test) or code the task doesn't need (delete
+   it).
+
+The bar is **>= 90% of changed lines and >= 90% of branches on changed lines**, measured by
+`scripts/diff-coverage.ts` against the PR's base branch. A changed file with none of its changed lines covered
+fails on its own, so well-tested files can't hide a forgotten one. It measures only the diff, so untested
+legacy code never blocks a change, and every change pays for its own code. Uncommitted and
+untracked files count locally, so the gate works mid-TDD. Coverage is a floor, not the goal: a
+test that runs a line without asserting what it does doesn't count in review.
+
+- Don't add `istanbul ignore` comments to pass the gate. The only accepted use is code that
+  genuinely can't run under test (a script's `import.meta.main` entry), with a reason in the
+  comment.
+- Don't raise coverage with tests that assert nothing, or by moving code into excluded files.
+- Files only reached through the Start Vite plugin (the generated route tree, real server-function
+  RPC) can't load in tests. Mock at that seam, as `src/router.test.ts` mocks `#/routeTree.gen` and
+  `src/routes/__root.test.tsx` mocks the server function.
 
 ## Projects
 
@@ -39,9 +70,10 @@ Setup for the `dom` project (jest-dom matchers, cleanup) is in `src/test/setup-d
 | Server function / API route handler  | Validation, authorization (another user's data is refused), response shape  |
 | Bug fix                              | A test that fails before the fix                                            |
 
-Tests that need Postgres (Drizzle queries, Better Auth) aren't set up yet, because CI has no
-database. Keep query logic thin and put decisions in plain functions you can unit test. Ask before
-adding a database to CI.
+Tests that run real Postgres queries (Drizzle, Better Auth) aren't set up yet. Until they are, the
+90% gate still applies to server functions: keep query code thin, put decisions in plain functions
+you unit test, and mock `#/db/db.server` at the seam for the handler's own logic (auth scoping,
+validation, response shape). Ask before adding a database to the test setup.
 
 ## How to write them
 
@@ -78,5 +110,6 @@ describe("Button", () => {
 });
 ```
 
-Examples in the repo: `src/lib/*.test.ts`, `src/components/**/*.test.tsx`,
-`src/routes/api/version.worker.test.ts`.
+Examples in the repo: `src/lib/*.test.ts`, `src/router.test.ts`, `src/components/**/*.test.tsx`,
+`src/routes/__root.test.tsx`, `src/routes/api/version.worker.test.ts`,
+`scripts/diff-coverage.test.ts` (including a real temporary git repo).
