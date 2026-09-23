@@ -17,6 +17,20 @@ load docs you don't need.
 | Branches, PRs, CI/CD, deploys, releases, hotfixes, build version / reload     | [docs/releases.md](docs/releases.md)               |
 | Deferred risks (stale reads, authz) to check before shipping data features    | [docs/known-concerns.md](docs/known-concerns.md)   |
 | Any TanStack Router/Start API (routes, loaders, server fns, middleware, SSR…) | [docs/tanstack-skills.md](docs/tanstack-skills.md) |
+| Writing or reviewing any code: library defaults, TypeScript, React, errors    | [docs/conventions.md](docs/conventions.md)         |
+| Styling, components, design tokens, Tailwind, Headless UI, accessibility      | [docs/ui.md](docs/ui.md)                           |
+| Infra choices, external providers/SDKs, bindings, AI/LLM features, Sentry     | [docs/integrations.md](docs/integrations.md)       |
+
+## Defaults
+
+- **TanStack first**: Router/Start, Query, Form, Table, Virtual, Pacer, Store before anything else.
+- **UI**: Tailwind themed through design tokens in `src/styles.css`; Headless UI for interactive
+  primitives, styled with Tailwind. No other component or CSS library.
+- **Infra**: Cloudflare primitives first (R2, KV, Queues, Workflows, Durable Objects, AI Gateway,
+  Workers AI, Vectorize). Third parties only for gaps (Sentry for observability).
+- **AI**: LangChain JS / LangGraph, provider-agnostic, through AI Gateway.
+- **Swappable providers**: app code depends on interfaces we own; vendor SDKs live only in
+  adapters. Keep everything else concrete and simple.
 
 ## Commands
 
