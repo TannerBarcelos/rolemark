@@ -13,6 +13,9 @@ test blocks merge and deploy, and on PRs so does diff coverage under 90%.
 | `bunx vitest run <path>`    | One file or folder                                          |
 | `bunx vitest --project dom` | One project (`unit`, `dom`, `workers`)                      |
 
+The test scripts run `bun run generate-routes` first: `src/routeTree.gen.ts` is gitignored, and
+`src/router.tsx` imports it even when a test mocks it.
+
 ## Test-driven, 90% of new code
 
 Write the test first. For every change:

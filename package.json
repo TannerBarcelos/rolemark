@@ -21,9 +21,9 @@
     "db:studio": "drizzle-kit studio",
     "deploy": "vite build && wrangler deploy",
     "cf-typegen": "wrangler types",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test": "bun run generate-routes && vitest run",
+    "test:watch": "bun run generate-routes && vitest",
+    "test:coverage": "bun run generate-routes && vitest run --coverage",
     "coverage:diff": "bun scripts/diff-coverage.ts"
   },
   "dependencies": {
