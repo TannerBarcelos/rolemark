@@ -18,37 +18,40 @@ load docs you don't need.
 | Deferred risks (stale reads, authz) to check before shipping data features    | [docs/known-concerns.md](docs/known-concerns.md)   |
 | Any TanStack Router/Start API (routes, loaders, server fns, middleware, SSR…) | [docs/tanstack-skills.md](docs/tanstack-skills.md) |
 | Writing or reviewing any code: library defaults, TypeScript, React, errors    | [docs/conventions.md](docs/conventions.md)         |
-| Styling, components, design tokens, Tailwind, Headless UI, accessibility      | [docs/ui.md](docs/ui.md)                           |
+| Styling, components, design tokens, Tailwind, React Aria, accessibility       | [docs/ui.md](docs/ui.md)                           |
+| Writing or running tests, Vitest projects, what to test                       | [docs/testing.md](docs/testing.md)                 |
 | Infra choices, external providers/SDKs, bindings, AI/LLM features, Sentry     | [docs/integrations.md](docs/integrations.md)       |
 
 ## Defaults
 
 - **TanStack first**: Router/Start, Query, Form, Table, Virtual, Pacer, Store before anything else.
-- **UI**: Tailwind themed through design tokens in `src/styles.css`; Headless UI for interactive
-  primitives, styled with Tailwind. No other component or CSS library.
+- **UI**: Tailwind themed through design tokens in `src/styles.css`; React Aria Components for every
+  interactive widget, styled with Tailwind. No other component or CSS library.
 - **Infra**: Cloudflare primitives first (R2, KV, Queues, Workflows, Durable Objects, AI Gateway,
   Workers AI, Vectorize). Third parties only for gaps (Sentry for observability).
-- **AI**: LangChain JS / LangGraph, provider-agnostic, through AI Gateway.
+- **AI**: LangChain JS / LangGraph, provider-agnostic (Workers AI is one provider), through AI
+  Gateway.
 - **Swappable providers**: app code depends on interfaces we own; vendor SDKs live only in
   adapters. Keep everything else concrete and simple.
 
 ## Commands
 
-| Command                             | Use                                                                  |
-| ----------------------------------- | -------------------------------------------------------------------- |
-| `bun run dev`                       | Run locally in workerd on :3000 (needs `docker compose up -d`)       |
-| `bun run build`                     | Production build; also generates `src/routeTree.gen.ts`              |
-| `bun run generate-routes`           | Generate `src/routeTree.gen.ts` without building                     |
-| `bun run typecheck`                 | `tsc --noEmit` (fails in a fresh clone until routes are generated)   |
-| `bun run lint` / `bun run lint:fix` | oxlint, including layer-boundary rules                               |
-| `bun run fmt` / `bun run fmt:check` | oxfmt                                                                |
-| `bun run db:generate`               | SQL migration from `src/db/schema.ts` changes                        |
-| `bun run auth:generate`             | Regenerate auth tables in `src/db/schema.ts` from Better Auth config |
-| `bun run cf-typegen`                | Regenerate Worker types after `wrangler.jsonc` or `.env` key changes |
+| Command                               | Use                                                                  |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| `bun run dev`                         | Run locally in workerd on :3000 (needs `docker compose up -d`)       |
+| `bun run build`                       | Production build; also generates `src/routeTree.gen.ts`              |
+| `bun run generate-routes`             | Generate `src/routeTree.gen.ts` without building                     |
+| `bun run typecheck`                   | `tsc --noEmit` (fails in a fresh clone until routes are generated)   |
+| `bun run test` / `bun run test:watch` | Vitest: unit, DOM, and Workers-runtime projects                      |
+| `bun run lint` / `bun run lint:fix`   | oxlint, including layer-boundary rules                               |
+| `bun run fmt` / `bun run fmt:check`   | oxfmt                                                                |
+| `bun run db:generate`                 | SQL migration from `src/db/schema.ts` changes                        |
+| `bun run auth:generate`               | Regenerate auth tables in `src/db/schema.ts` from Better Auth config |
+| `bun run cf-typegen`                  | Regenerate Worker types after `wrangler.jsonc` or `.env` key changes |
 
 **Done means CI passes.** Before committing, run what CI runs (`.github/actions/check`):
-`bun run lint && bun run fmt:check && bun run db:generate` (must leave `drizzle/` unchanged)
-`&& bun run build && bun run typecheck`.
+`bun run lint && bun run fmt:check && bun run test && bun run db:generate` (must leave
+`drizzle/` unchanged) `&& bun run build && bun run typecheck`.
 
 ## Hard rules
 

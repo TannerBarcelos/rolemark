@@ -1,11 +1,12 @@
 # Conventions
 
 How code in this repo is written. Layers and file placement: [architecture.md](architecture.md).
-UI: [ui.md](ui.md). Providers and AI: [integrations.md](integrations.md).
+UI: [ui.md](ui.md). Providers and AI: [integrations.md](integrations.md). Tests:
+[testing.md](testing.md).
 
 ## Library defaults
 
-Prefer the TanStack package whenever one solves the problem. Load its skill first
+Everything in this table is installed. Prefer the TanStack package whenever one solves the problem. Load its skill first
 ([tanstack-skills.md](tanstack-skills.md)); where no skill is listed, read the package docs for the
 installed version.
 
@@ -20,7 +21,8 @@ installed version.
 | Shared client state outside the URL      | TanStack Store                                                    |
 | Schemas and validation                   | Zod (server fn `.validator`, forms, `validateSearch`, LLM output) |
 | Database                                 | Drizzle                                                           |
-| Styling / primitives                     | Tailwind + Headless UI ([ui.md](ui.md))                           |
+| Styling / components                     | Tailwind + React Aria Components ([ui.md](ui.md))                 |
+| Tests                                    | Vitest + Testing Library ([testing.md](testing.md))               |
 | AI                                       | LangChain JS / LangGraph ([integrations.md](integrations.md))     |
 
 Where state lives, in order of preference: the URL (search params via `validateSearch`) → route

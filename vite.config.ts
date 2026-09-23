@@ -5,6 +5,8 @@ import { defineConfig } from "vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
+import tailwindcss from "@tailwindcss/vite";
+
 import viteReact from "@vitejs/plugin-react";
 
 // Build identity, shared by the client and server bundles. The client bakes it
@@ -34,7 +36,12 @@ const config = defineConfig({
     __APP_BUILD_ID__: JSON.stringify(resolveBuildId()),
     __APP_BUILD_SEQ__: JSON.stringify(resolveBuildSeq()),
   },
-  plugins: [cloudflare({ viteEnvironment: { name: "ssr" } }), tanstackStart(), viteReact()],
+  plugins: [
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    tailwindcss(),
+    tanstackStart(),
+    viteReact(),
+  ],
 });
 
 export default config;

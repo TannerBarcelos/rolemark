@@ -1,5 +1,5 @@
 name: Install and check
-description: Install dependencies, lint, format-check, check migrations, build, and typecheck.
+description: Install dependencies, lint, format-check, test, check migrations, build, and typecheck.
 
 runs:
   using: composite
@@ -16,6 +16,10 @@ runs:
 
     - shell: bash
       run: bun run fmt:check
+
+    # Unit, DOM, and Workers-runtime tests (vitest.config.ts, docs/testing.md).
+    - shell: bash
+      run: bun run test
 
     # CD applies drizzle/ as-is, so a schema.ts change without its migration would
     # deploy code that expects columns the database never gets.

@@ -27,11 +27,11 @@ configured in `wrangler.jsonc`, and needs no extra vendor account or secret.
 Use a third party only when Cloudflare has no real equivalent or it's clearly worse for the job,
 and say why in the PR. Current approved exceptions:
 
-| Need                        | Provider                      |
-| --------------------------- | ----------------------------- |
-| Error tracking, performance | Sentry (`@sentry/cloudflare`) |
-| Auth                        | Better Auth (Google)          |
-| Postgres hosting            | PlanetScale                   |
+| Need                        | Provider                                                                |
+| --------------------------- | ----------------------------------------------------------------------- |
+| Error tracking, performance | Sentry (`@sentry/cloudflare`; installed, not wired until there's a DSN) |
+| Auth                        | Better Auth (Google)                                                    |
+| Postgres hosting            | PlanetScale                                                             |
 
 Anything new is added to this table in the same PR that introduces it.
 
@@ -121,12 +121,16 @@ to the layer table in [architecture.md](architecture.md#layers).
 
 ## AI features
 
-Use the LangChain JS ecosystem. It gives one model interface across providers, structured output,
-tool calling, retrieval, and agent orchestration.
+Use the LangChain JS ecosystem for orchestration and Cloudflare for everything under it. LangChain
+gives one model interface across providers, structured output, tool calling, retrieval, and agent
+orchestration. Cloudflare supplies Workers AI as one provider among several, AI Gateway in front of
+all of them, and Vectorize, Queues, and Workflows around them. All packages in the table are
+installed.
 
 | Need                                 | Use                                                                     |
 | ------------------------------------ | ----------------------------------------------------------------------- |
 | Chat model, provider-agnostic        | `initChatModel` from `langchain`, typed as `BaseChatModel`              |
+| Cloudflare-hosted models             | `ChatCloudflareWorkersAI` from `@langchain/cloudflare`                  |
 | Provider packages                    | `@langchain/anthropic`, `@langchain/openai`, `@langchain/cloudflare`, … |
 | Structured output                    | `model.withStructuredOutput(zodSchema)`                                 |
 | Agents, multi-step or stateful flows | LangGraph (`@langchain/langgraph`)                                      |

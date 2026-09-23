@@ -5,57 +5,33 @@ Styling, components, and accessibility. Layer and file rules are in
 
 ## Stack
 
-| Need                                                    | Use                                                       |
-| ------------------------------------------------------- | --------------------------------------------------------- |
-| Styling                                                 | Tailwind CSS v4 (`@tailwindcss/vite`), themed in CSS      |
-| Interactive primitives (menu, dialog, listbox, tabs, …) | Headless UI (`@headlessui/react`), styled with Tailwind   |
-| Component variants (`size`, `intent`, …)                | `class-variance-authority` (`cva`)                        |
-| Merging class names                                     | `cn()` in `src/lib/cn.ts` (`clsx` + `tailwind-merge`)     |
-| Forms                                                   | TanStack Form (see [conventions.md](conventions.md))      |
-| Tables and long lists                                   | TanStack Table, TanStack Virtual                          |
-| Icons                                                   | One icon set, imported per icon (tree-shaken); no sprites |
+All of these are installed and wired.
 
-Tailwind and Headless UI are not installed yet. The first change that needs them adds them, wires
-the Vite plugin, and moves the design tokens below into `src/styles.css`. Existing BEM classes in
-`src/styles.css` (`.version-banner…`) are legacy: convert a component to Tailwind when you next
-change it, and delete its CSS in the same change.
+| Need                                             | Use                                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------------- |
+| Styling                                          | Tailwind CSS v4 (`@tailwindcss/vite`), themed in `src/styles.css`     |
+| Interactive components (every widget: see below) | React Aria Components (`react-aria-components`), styled with Tailwind |
+| Component variants (`intent`, `size`, …)         | `tailwind-variants` (`tv`)                                            |
+| Merging class names outside a `tv` call          | `cn()` from `#/lib/cn` (`clsx` + `tailwind-merge`)                    |
+| Forms: state, validation, submission             | TanStack Form + Zod, rendering React Aria fields                      |
+| Tables and long lists                            | TanStack Table (logic) + React Aria `Table` (a11y), TanStack Virtual  |
+
+React Aria Components covers the full widget set: buttons, text fields, number fields, search,
+checkbox/radio/switch, select, combobox/autocomplete, menu, listbox, grid list, tag group, tabs,
+dialog/modal/popover/tooltip, disclosure, date and time pickers, calendar, range calendar, color
+pickers, slider, progress/meter, table, tree, drag and drop, and file trigger/drop zone. Toast
+ships as `UNSTABLE_Toast`/`UNSTABLE_ToastRegion`: wrap it in one primitive so an API change touches
+one file. Don't add another component library or hand-roll a widget it provides.
+
+Existing BEM classes in `src/styles.css` (`.version-banner…`) are legacy: convert a component to
+Tailwind when you next change it, and delete its CSS in the same change.
 
 ## Design language lives in tokens
 
-The design language is defined once, as Tailwind theme variables in `src/styles.css`. Components
-use the semantic utilities those tokens generate, never raw palette values or arbitrary hex.
-
-```css
-@import "tailwindcss";
-
-@theme {
-  /* Semantic colors: components use these, never `bg-gray-900` or `bg-[#111827]`. */
-  --color-surface: oklch(0.99 0 0);
-  --color-surface-raised: oklch(1 0 0);
-  --color-fg: oklch(0.21 0.02 265);
-  --color-fg-muted: oklch(0.55 0.02 265);
-  --color-accent: oklch(0.55 0.2 265);
-  --color-accent-fg: oklch(0.99 0 0);
-  --color-danger: oklch(0.58 0.22 27);
-  --color-border: oklch(0.92 0.01 265);
-
-  --font-sans: "Inter Variable", system-ui, sans-serif;
-  --radius-card: 0.625rem;
-}
-
-/* Dark mode swaps token values; components don't change. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-surface: oklch(0.17 0.02 265);
-    --color-surface-raised: oklch(0.21 0.02 265);
-    --color-fg: oklch(0.97 0 0);
-    --color-fg-muted: oklch(0.7 0.02 265);
-    --color-border: oklch(0.3 0.02 265);
-  }
-}
-```
-
-Rules:
+The design language is defined once, as Tailwind theme variables in the `@theme` block of
+`src/styles.css`. Components use the semantic utilities those tokens generate (`bg-surface`,
+`text-fg-muted`, `rounded-card`), never raw palette values or arbitrary hex. Dark mode redefines
+the same variables under `prefers-color-scheme: dark`; components don't change.
 
 - A new color, radius, shadow, or font is a new token, not an arbitrary value (`bg-[#…]`,
   `rounded-[7px]`). Arbitrary values are for one-off layout math only.
@@ -65,66 +41,43 @@ Rules:
 
 ## Components
 
-- **Primitives** (`Button`, `Input`, `Dialog`, `Menu`, …) wrap Headless UI or native elements,
-  own their Tailwind classes, and expose variants through `cva`. Feature components compose
-  primitives; they don't restyle them from outside beyond layout (`className` for margin, width,
-  grid placement).
-- Accept `className` and merge it last with `cn()` so callers can adjust layout.
-- Props describe intent (`intent="danger"`), not appearance (`red`).
+Primitives live in `src/components/ui/` (`Button.tsx`, `TextField.tsx`, `Dialog.tsx`, …), one
+React Aria component each. Feature components live in `src/components/` and compose primitives.
+`src/components/ui/Button.tsx` is the reference implementation; copy its shape.
 
-```tsx
-import { Button as HeadlessButton, type ButtonProps } from "@headlessui/react";
-import { type VariantProps, cva } from "class-variance-authority";
+- A primitive wraps one React Aria component, owns its Tailwind classes, and exposes variants
+  through `tv`. Feature components don't restyle primitives beyond layout (`className` for margin,
+  width, grid placement).
+- Props describe intent (`intent="danger"`), not appearance (`red`). Keep React Aria's prop names
+  (`onPress`, `isDisabled`, `onChange`) instead of inventing new ones.
+- React Aria's `className` can be a function of render state. Pass it through
+  `composeRenderProps` and let `tv` merge it, so callers can still override:
 
-import { cn } from "#/lib/cn";
+  ```tsx
+  className={composeRenderProps(className, (className) => button({ intent, size, className }))}
+  ```
 
-const button = cva(
-  "inline-flex items-center gap-2 rounded-card font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent data-disabled:opacity-50",
-  {
-    variants: {
-      intent: {
-        primary: "bg-accent text-accent-fg data-hover:bg-accent/90",
-        secondary: "border border-border bg-surface-raised text-fg data-hover:bg-surface",
-        danger: "bg-danger text-accent-fg data-hover:bg-danger/90",
-      },
-      size: { sm: "h-8 px-3 text-sm", md: "h-10 px-4 text-sm" },
-    },
-    defaultVariants: { intent: "primary", size: "md" },
-  },
-);
-
-export function Button({
-  intent,
-  size,
-  className,
-  ...props
-}: ButtonProps & VariantProps<typeof button> & { className?: string }) {
-  return <HeadlessButton className={cn(button({ intent, size }), className)} {...props} />;
-}
-```
-
-```ts
-// src/lib/cn.ts
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-```
-
-Style Headless UI state through its `data-*` attributes (`data-open:`, `data-focus:`,
-`data-selected:`, `data-disabled:`), not through render props, so styles stay in `className`.
+- Style state with React Aria's data attributes, not `:hover` / `:focus` or render-prop
+  booleans: `data-hovered:`, `data-pressed:`, `data-focus-visible:`, `data-selected:`,
+  `data-disabled:`, `data-invalid:`, `data-open:`, `data-entering:`/`data-exiting:`. They behave the
+  same for mouse, touch, and keyboard.
+- Use `onPress`, not `onClick`, on React Aria buttons and links.
+- For router links, use TanStack Router's `Link` for plain navigation. When a React Aria component
+  takes an `href` (menu items, tabs, `Link`), register the router once with `RouterProvider` from
+  `react-aria-components` so those navigate client-side.
 
 ## Accessibility baseline
 
-Headless UI covers keyboard and ARIA for its widgets. Everything else is on us:
+React Aria handles keyboard, focus, and ARIA for its widgets. The rest is on us:
 
-- Use the semantic element first: `<button>` for actions, `<a>`/`<Link>` for navigation, `<form>`
-  with `<label>`s, headings in order. No clickable `<div>`s.
-- Every interactive element has a visible focus style (`focus-visible:`) and an accessible name.
-  Icon-only buttons get `aria-label`; decorative SVGs get `aria-hidden="true"`.
-- Async status (saving, errors, banners) is announced with `role="status"` / `aria-live`.
+- Use the semantic element or matching React Aria component. No clickable `<div>`s.
+- Every interactive element has a visible focus style (`data-focus-visible:`) and an accessible
+  name. Icon-only buttons get `aria-label`; decorative SVGs get `aria-hidden="true"`.
+- Form fields use React Aria's `Label`, `Text slot="description"`, and `FieldError` so labels,
+  help text, and errors are wired up automatically.
+- Async status (saving, errors, banners) is announced with `role="status"` / `aria-live`, or the
+  toast primitive.
 - Text meets WCAG AA contrast against its token background, in light and dark.
 - Motion respects `motion-safe:` / `motion-reduce:`.
 - Layouts work at 320px wide and at 200% zoom without horizontal scroll.
+- Every new primitive gets a keyboard test ([testing.md](testing.md)).

@@ -18,8 +18,10 @@ never above.
 
 `components/` and `hooks/` sit side by side and may import each other.
 
-Other files: `src/router.tsx` (router factory), `src/styles.css`, `src/routeTree.gen.ts`
-(generated, gitignored).
+Other files: `src/router.tsx` (router factory; creates the per-request `QueryClient`),
+`src/styles.css` (Tailwind and design tokens), `src/routeTree.gen.ts` (generated, gitignored),
+`src/test/` (Vitest setup only; app code never imports it). Tests sit next to the file they test
+([testing.md](testing.md)). `components/ui/` holds UI primitives ([ui.md](ui.md)).
 
 ## Enforcement
 

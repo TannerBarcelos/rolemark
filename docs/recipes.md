@@ -56,6 +56,8 @@ auth by default; check the session yourself with `getAuth().api.getSession(...)`
 - Client-safe only: no `db/`, `middleware/`, or `auth/` imports except `#/auth/auth-client`.
   Server data comes from calling server functions.
 - Shared helpers with no dependencies (usable on client and server) go in `src/lib/`.
+- UI primitives go in `src/components/ui/`, following [ui.md](ui.md).
+- Add a test next to the file ([testing.md](testing.md)).
 
 ## Table or column
 
