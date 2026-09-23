@@ -72,11 +72,14 @@ Run `bun run cf-typegen` after changing bindings in `wrangler.jsonc` or keys in 
 
 ## Deploys and version drift
 
+`main` is the only long-lived branch. Branch from it, open a PR back into it,
+and merge once CI passes and the branch is up to date with `main`.
+
 - **CI** (`.github/workflows/ci.yml`) checks every pull request. Its builds
   are never deployed.
 - **CD** (`.github/workflows/cd.yml`) runs only on pushes to `main`: it
   checks, builds once, and deploys that artifact via `scripts/deploy.sh`
-  (currently a stub). Set the `PRODUCTION_URL` repository variable to have CD
+  (currently a stub; see "Deploying to Cloudflare" for the manual steps). Set the `PRODUCTION_URL` repository variable to have CD
   confirm the live build after deploying.
 
 Every deployed build carries an identity (`APP_BUILD_ID` = commit SHA,
