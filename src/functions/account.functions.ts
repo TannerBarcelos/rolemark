@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 
 import { account } from "#/db/schema";
-import { authMiddleware } from "#/lib/auth.functions";
-import { getDb } from "#/lib/auth.server";
+import { authMiddleware } from "#/middleware/auth.middleware";
+import { getDb } from "#/db/db.server";
 
 /** Sign-in providers linked to the current user (e.g. ["google"]). */
 export const getLinkedProviders = createServerFn({ method: "GET" })

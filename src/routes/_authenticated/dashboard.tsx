@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 
-import { getLinkedProviders } from "#/lib/account.functions";
-import { authClient } from "#/lib/auth-client";
+import { getLinkedProviders } from "#/functions/account.functions";
+import { authClient } from "#/auth/auth-client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: () => getLinkedProviders(),

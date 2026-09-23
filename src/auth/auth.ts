@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 
-import type { Db } from "#/db/client";
+import type { Db } from "#/db/client.server";
 import * as schema from "#/db/schema";
 
 export interface AuthEnv {
