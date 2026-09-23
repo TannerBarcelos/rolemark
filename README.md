@@ -1,7 +1,8 @@
 # RoleMark
 
-A TanStack Start app with self-hosted authentication via [Better Auth](https://www.better-auth.com)
-(Google sign-in), Drizzle ORM, and Postgres.
+A TanStack Start app on Cloudflare Workers with self-hosted authentication via
+[Better Auth](https://www.better-auth.com) (Google sign-in), Drizzle ORM, and Postgres through
+Cloudflare Hyperdrive.
 
 ## Setup
 
@@ -10,7 +11,7 @@ bun install
 cp .env.example .env        # then fill in the values
 docker compose up -d        # local Postgres on :5432
 bun run db:migrate          # create auth tables
-bun --bun run dev
+bun run dev                 # runs the Worker locally in workerd
 ```
 
 ### Google OAuth client
@@ -22,17 +23,30 @@ bun --bun run dev
 
 ## Auth layout
 
-| Path                            | Purpose                                                           |
-| ------------------------------- | ----------------------------------------------------------------- |
-| `src/lib/auth.server.ts`        | Better Auth instance (server only)                                |
-| `src/lib/auth-client.ts`        | Browser client (`authClient.signIn.social`, `authClient.signOut`) |
-| `src/lib/auth.functions.ts`     | `getSession` server fn and `authMiddleware` for server functions  |
-| `src/routes/api/auth/$.ts`      | Mounts Better Auth's endpoints at `/api/auth/*`                   |
-| `src/routes/_authenticated.tsx` | Route guard; anything under `_authenticated/` requires a session  |
-| `src/db/schema.ts`              | Auth tables (regenerate with `bun run auth:generate`)             |
+| Path                            | Purpose                                                                |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `src/lib/auth.ts`               | `createAuth(db, env)`: Better Auth config (Google, account linking)    |
+| `src/lib/auth.server.ts`        | `getAuth()` / `getDb()`: per-request instances built from Worker `env` |
+| `src/lib/auth.functions.ts`     | `getSession` server fn and `authMiddleware`                            |
+| `src/lib/auth-client.ts`        | Browser client (`authClient.signIn.social`, `authClient.signOut`)      |
+| `src/routes/api/auth/$.ts`      | Mounts Better Auth's endpoints at `/api/auth/*`                        |
+| `src/routes/_authenticated.tsx` | Route guard; anything under `_authenticated/` requires a session       |
+| `src/lib/account.functions.ts`  | Example protected server function                                      |
+| `src/db/schema.ts`              | Auth tables (regenerate with `bun run auth:generate`)                  |
 
 Route guards only protect pages. Every server function that touches user data must use
-`authMiddleware` as well.
+`authMiddleware` and scope queries by `context.user.id`:
+
+```ts
+export const listThings = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    return getDb().select().from(things).where(eq(things.userId, context.user.id));
+  });
+```
+
+Workers cannot reuse sockets across requests, so never create the database client or auth
+instance at module scope; always go through `getDb()` / `getAuth()`.
 
 ## Database scripts
 
@@ -41,4 +55,14 @@ Route guards only protect pages. Every server function that touches user data mu
 - `bun run db:migrate` — apply migrations
 - `bun run db:studio` — browse the database
 
-Build the production app with `bun --bun run build`.
+## Deploying to Cloudflare
+
+1. Provision Postgres (Neon, Supabase, RDS, …) and run `DATABASE_URL=<prod url> bun run db:migrate`.
+2. `bunx wrangler hyperdrive create rolemark-db --connection-string="<prod url>"` and put the id in
+   `wrangler.jsonc`.
+3. Set `vars.BETTER_AUTH_URL` in `wrangler.jsonc` to the production origin.
+4. `bunx wrangler secret put BETTER_AUTH_SECRET` (and `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`).
+5. Add `https://<your-domain>/api/auth/callback/google` to the Google OAuth client.
+6. `bun run deploy`
+
+Run `bun run cf-typegen` after changing bindings in `wrangler.jsonc` or keys in `.env`.

@@ -1,28 +1,28 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { getRequest } from "@tanstack/react-start/server";
+import { env } from "cloudflare:workers";
 
-import { db } from "#/db/index.server";
-import * as schema from "#/db/schema";
+import { type Db, createDb } from "#/db/client";
+import { type Auth, createAuth } from "#/lib/auth";
 
-export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
-  secret: process.env.BETTER_AUTH_SECRET,
-  database: drizzleAdapter(db, { provider: "pg", schema }),
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      // Always show the account chooser so users can switch Google accounts.
-      prompt: "select_account",
-    },
-  },
-  session: {
-    // Cache the session in a signed cookie so most reads skip the database.
-    cookieCache: { enabled: true, maxAge: 5 * 60 },
-  },
-  // Must stay last: forwards Set-Cookie headers from server functions.
-  plugins: [tanstackStartCookies()],
-});
+interface RequestScope {
+  db: Db;
+  auth: Auth;
+}
 
-export type Session = typeof auth.$Infer.Session;
+// Keyed by the incoming Request so beforeLoad, middleware, and the handler share one
+// client per request without leaking I/O objects across requests (which Workers forbids).
+const scopes = new WeakMap<Request, RequestScope>();
+
+function getScope(): RequestScope {
+  const request = getRequest();
+  let scope = scopes.get(request);
+  if (!scope) {
+    const db = createDb(env.HYPERDRIVE.connectionString);
+    scope = { db, auth: createAuth(db, env) };
+    scopes.set(request, scope);
+  }
+  return scope;
+}
+
+export const getDb = () => getScope().db;
+export const getAuth = () => getScope().auth;

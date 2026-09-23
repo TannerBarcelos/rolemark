@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rolemark",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": { "enabled": true },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      // Create with: wrangler hyperdrive create rolemark-db --connection-string="<postgres url>"
+      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      // Used by `bun run dev` instead of the real Hyperdrive (matches docker-compose.yml).
+      "localConnectionString": "postgres://rolemark:rolemark@localhost:5432/rolemark",
+    },
+  ],
+  "vars": {
+    "BETTER_AUTH_URL": "https://rolemark.example.com",
+  },
+  // Secrets (wrangler secret put <NAME>): BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+}

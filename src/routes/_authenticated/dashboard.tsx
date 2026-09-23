@@ -1,13 +1,16 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 
+import { getLinkedProviders } from "#/lib/account.functions";
 import { authClient } from "#/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  loader: () => getLinkedProviders(),
   component: Dashboard,
 });
 
 function Dashboard() {
   const { session } = Route.useRouteContext();
+  const providers = Route.useLoaderData();
   const router = useRouter();
 
   const signOut = async () => {
@@ -20,6 +23,7 @@ function Dashboard() {
     <main>
       <h1>Welcome, {session.user.name}</h1>
       <p>Signed in as {session.user.email}</p>
+      <p>Linked sign-in methods: {providers.join(", ")}</p>
       <button type="button" onClick={signOut}>
         Sign out
       </button>
