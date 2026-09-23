@@ -3,28 +3,36 @@ import { useState } from "react";
 import { useVersionDrift } from "#/hooks/use-version-drift";
 
 export function VersionDriftBanner() {
-  const { isStale, liveBuild, reload } = useVersionDrift();
-  // "Later" hides the banner until a newer deploy lands. The next in-app
-  // navigation still picks up the new build (see useVersionDrift).
-  const [dismissedFor, setDismissedFor] = useState<string | null>(null);
+  const { isStale, reload } = useVersionDrift();
+  // Closing hides the banner for the life of the tab; a refresh loads the new build.
+  const [closed, setClosed] = useState(false);
 
-  const dismissKey = liveBuild?.id ?? "unknown";
-
-  if (!isStale || dismissedFor === dismissKey) return null;
+  if (!isStale || closed) return null;
 
   return (
     <div className="version-banner" role="status" aria-live="polite">
-      <span>A new version of RoleMark is available.</span>
+      <div className="version-banner__text">
+        <strong>Update available</strong>
+        <span>A new version of RoleMark is available.</span>
+      </div>
       <div className="version-banner__actions">
-        <button type="button" className="version-banner__reload" onClick={reload}>
-          Reload
+        <button type="button" className="version-banner__refresh" onClick={reload}>
+          Refresh
         </button>
         <button
           type="button"
-          className="version-banner__dismiss"
-          onClick={() => setDismissedFor(dismissKey)}
+          className="version-banner__close"
+          aria-label="Close"
+          onClick={() => setClosed(true)}
         >
-          Later
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path
+              d="M4 4l8 8M12 4l-8 8"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
       </div>
     </div>
