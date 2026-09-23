@@ -1,6 +1,6 @@
 // Entry point for `bun run auth:generate` only; never imported by the app.
 // The CLI inspects the config to build the schema and never opens a connection.
-import { createDb } from "#/db/client";
+import { createDb } from "#/db/client.server";
 import { createAuth } from "#/auth/auth";
 
 export const auth = createAuth(createDb("postgres://localhost/unused"), {

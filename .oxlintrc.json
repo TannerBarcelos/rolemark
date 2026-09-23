@@ -4,7 +4,19 @@
   "categories": {
     "correctness": "error"
   },
-  "rules": {},
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["../*", "../**"],
+            "message": "Use the #/ alias across folders so layer boundaries stay lint-visible; ./ is fine for siblings."
+          }
+        ]
+      }
+    ]
+  },
   "env": {
     "builtin": true
   },
@@ -19,6 +31,10 @@
               {
                 "group": ["#/**", "!#/lib/**"],
                 "message": "lib/ holds dependency-free helpers and may only import from lib/."
+              },
+              {
+                "group": ["../*", "../**"],
+                "message": "Use the #/ alias across folders so layer boundaries stay lint-visible; ./ is fine for siblings."
               }
             ]
           }
@@ -42,6 +58,10 @@
                   "#/routes/*"
                 ],
                 "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              },
+              {
+                "group": ["../*", "../**"],
+                "message": "Use the #/ alias across folders so layer boundaries stay lint-visible; ./ is fine for siblings."
               }
             ]
           }
@@ -64,6 +84,10 @@
                   "#/routes/*"
                 ],
                 "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              },
+              {
+                "group": ["../*", "../**"],
+                "message": "Use the #/ alias across folders so layer boundaries stay lint-visible; ./ is fine for siblings."
               }
             ]
           }
@@ -80,6 +104,10 @@
               {
                 "group": ["#/functions/*", "#/hooks/*", "#/components/*", "#/routes/*"],
                 "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              },
+              {
+                "group": ["../*", "../**"],
+                "message": "Use the #/ alias across folders so layer boundaries stay lint-visible; ./ is fine for siblings."
               }
             ]
           }
@@ -96,6 +124,10 @@
               {
                 "group": ["#/hooks/*", "#/components/*", "#/routes/*"],
                 "message": "Layer boundary: imports must point down the stack (routes \u2192 components/hooks \u2192 functions \u2192 middleware \u2192 auth \u2192 db \u2192 lib). See AGENTS.md."
+              },
+              {
+                "group": ["../*", "../**"],
+                "message": "Use the #/ alias across folders so layer boundaries stay lint-visible; ./ is fine for siblings."
               }
             ]
           }
@@ -116,6 +148,10 @@
               {
                 "group": ["#/db/*", "#/middleware/*", "#/auth/*", "!#/auth/auth-client"],
                 "message": "Server-only module: client code must call a server function in #/functions instead."
+              },
+              {
+                "group": ["../*", "../**"],
+                "message": "Use the #/ alias across folders so layer boundaries stay lint-visible; ./ is fine for siblings."
               }
             ]
           }

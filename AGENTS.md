@@ -90,7 +90,7 @@ hooks/        React hooks                ─┘ or server-only auth (auth-client
 functions/    createServerFn RPCs (*.functions.ts): the only bridge from client to server
 middleware/   createMiddleware (*.middleware.ts): function or request middleware
 auth/         Better Auth config, per-request instance (auth.server.ts), browser client
-db/           Drizzle schema, client factory, per-request client (db.server.ts)
+db/           Drizzle schema, client factory (client.server.ts), per-request client (db.server.ts)
 lib/          dependency-free helpers shared by client and server; imports only lib/
 ```
 
@@ -103,5 +103,8 @@ Rules of thumb:
 - Name middleware by what it does and state its kind in the doc comment: `type: "function"`
   runs only where attached; `type: "request"` runs on every request once registered in
   `src/start.ts`.
-- Use `#/` imports across folders; relative imports are only for siblings in the same folder
-  (the lint rule can't see through `../`).
+- Use `#/` imports across folders; `../` imports are a lint error so boundaries stay visible.
+  `./` is fine for siblings in the same folder.
+- Anything that must never reach the browser is named `*.server.ts` (`db/client.server.ts`,
+  `db/db.server.ts`, `auth/auth.server.ts`); TanStack Start's import protection fails the
+  client build if client code imports one.

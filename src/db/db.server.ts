@@ -1,7 +1,7 @@
 import { getRequest } from "@tanstack/react-start/server";
 import { env } from "cloudflare:workers";
 
-import { type Db, createDb } from "#/db/client";
+import { type Db, createDb } from "#/db/client.server";
 
 // Keyed by the incoming Request so beforeLoad, middleware, and the handler share one
 // client per request without leaking I/O objects across requests (which Workers forbids).
