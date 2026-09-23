@@ -27,11 +27,13 @@ jobs:
 
       # Pin the build identity once so the client and server bundles (and any
       # instance deployed from this artifact) all report the same build. The
-      # client uses APP_BUILD_TIME to decide whether the server is newer.
+      # client uses APP_BUILD_SEQ to decide whether the server is newer.
+      # run_number is per workflow file: renaming or recreating this file
+      # resets it to 1, which would make every new build look older.
       - name: Set build identity
         run: |
           echo "APP_BUILD_ID=${GITHUB_SHA}" >> "$GITHUB_ENV"
-          echo "APP_BUILD_TIME=$(date +%s%3N)" >> "$GITHUB_ENV"
+          echo "APP_BUILD_SEQ=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
       # Build before typecheck: the build generates src/routeTree.gen.ts.
       - run: bun --bun run build
