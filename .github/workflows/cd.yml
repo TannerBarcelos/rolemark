@@ -63,6 +63,27 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - run: bun install --frozen-lockfile
+
+      # Applies drizzle/ migrations to this environment's PlanetScale branch before
+      # the new Worker goes live, so the old Worker briefly runs against the new
+      # schema: migrations must be backward compatible (see docs/planetscale.md).
+      # DATABASE_URL is the environment's secret for the `migrator` role, never the
+      # Worker's `app` role. Skipped with a warning until the secret is set.
+      - name: Migrate database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::DATABASE_URL is not set on this environment; skipping migrations."
+            exit 0
+          fi
+          bun run db:migrate
+
       - name: Deploy
         run: ./scripts/deploy.sh "$DEPLOY_ENV" dist
         env:

@@ -1,5 +1,6 @@
 services:
   postgres:
+    # Same major version as the PlanetScale branches (staging/production). Keep them in step.
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: rolemark

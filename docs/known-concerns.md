@@ -4,7 +4,9 @@ Deliberately deferred issues. Resolve each one before the milestone listed with 
 
 ## CRITICAL: Hyperdrive query caching serves stale reads
 
-**Status:** Open. Must be resolved before the first production deploy that stores user data.
+**Status:** Mitigated in setup, not yet verified. [docs/planetscale.md](planetscale.md) creates both
+Hyperdrive configs with `--caching-disabled` (option 1 below). Close this once the "Done when" test
+has passed against the real staging and production configs.
 
 **Problem.** Hyperdrive caches the results of read queries (`SELECT`) by default: 60s `max-age`
 plus a stale-while-revalidate window. Writes are never cached, but a read that runs right after a
