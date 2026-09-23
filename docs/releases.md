@@ -34,8 +34,9 @@
 3. Open a second PR from the same `hotfix/<name>` branch into `develop`. Without it, the next
    release from `develop` undoes the fix.
 
-- **CI** (`.github/workflows/ci.yml`) checks every pull request. Its builds
-  are never deployed.
+- **CI** (`.github/workflows/ci.yml`) checks every pull request, including tests with coverage
+  and the 90% diff-coverage gate against the PR's base branch (docs/testing.md). The report is in
+  the job summary and the `coverage-<PR>` artifact. Its builds are never deployed.
 - **CD** (`.github/workflows/cd.yml`) runs only on pushes to `develop` and
   `main`: it checks, builds once, and deploys that artifact via
   `scripts/deploy.sh` (currently a stub; see "Deploying to Cloudflare" for the

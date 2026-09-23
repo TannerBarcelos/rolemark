@@ -1,10 +1,11 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 
 import { VersionDriftBanner } from "#/components/VersionDriftBanner";
 import { getSession } from "#/functions/auth.functions";
+import type { RouterContext } from "#/router";
 import appCss from "#/styles.css?url";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async () => {
     const session = await getSession();
     return { session };
