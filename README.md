@@ -68,21 +68,45 @@ instance at module scope; always go through `getDb()` / `getAuth()`.
 5. Add `https://<your-domain>/api/auth/callback/google` to the Google OAuth client.
 6. `bun run deploy`
 
+**Staging** (`env.staging` in `wrangler.jsonc`, Worker `rolemark-staging`) is deployed from
+`develop` and needs its own copy of everything above. Never point it at the production database.
+
+1. Provision a **separate** staging Postgres and run `DATABASE_URL=<staging url> bun run db:migrate`.
+2. `bunx wrangler hyperdrive create rolemark-db-staging --connection-string="<staging url>"` and put
+   the id in `env.staging.hyperdrive`.
+3. Set `env.staging.vars.BETTER_AUTH_URL` to the staging origin.
+4. `bunx wrangler secret put BETTER_AUTH_SECRET --env staging` (and the Google secrets). Use a
+   different `BETTER_AUTH_SECRET` from production.
+5. Add `https://<staging-domain>/api/auth/callback/google` to the Google OAuth client, or use a
+   separate staging client.
+6. `CLOUDFLARE_ENV=staging bun run deploy`
+
+CD builds with `CLOUDFLARE_ENV=staging` on `develop` and without it on `main`, and
+`scripts/deploy.sh` refuses to deploy a build to a different environment than it was built for.
+
 Run `bun run cf-typegen` after changing bindings in `wrangler.jsonc` or keys in `.env`.
 
 ## Branches, releases, and version drift
 
-| Branch    | Role                                    | Receives PRs from         | Deploys to   |
-| --------- | --------------------------------------- | ------------------------- | ------------ |
-| `develop` | Staging: stable, next release candidate | feature branches          | `staging`    |
-| `main`    | Production                              | `develop` only (releases) | `production` |
+| Branch    | Role                                    | Receives PRs from                | Deploys to   |
+| --------- | --------------------------------------- | -------------------------------- | ------------ |
+| `develop` | Staging: stable, next release candidate | feature branches                 | `staging`    |
+| `main`    | Production                              | `develop` (releases), `hotfix/*` | `production` |
 
 1. Branch from `develop`, open a PR back into `develop`. CI must pass and the
    branch must be up to date.
 2. Merging deploys to **staging**. Verify there.
-3. To release, open a PR **`develop` → `main`** (merge commit). CI's
-   `release-source` check rejects PRs into `main` from any other branch.
+3. To release, open a PR **`develop` → `main`** (merge commit). The
+   `release-source` check rejects PRs into `main` from anything other than
+   `develop` or `hotfix/*`.
 4. Merging deploys to **production**.
+
+**Hotfixes** skip staging when production can't wait for the next release:
+
+1. Branch `hotfix/<name>` from `main` and open a PR into `main`.
+2. Merging deploys to production.
+3. Open a second PR from the same `hotfix/<name>` branch into `develop`. Without it, the next
+   release from `develop` undoes the fix.
 
 - **CI** (`.github/workflows/ci.yml`) checks every pull request. Its builds
   are never deployed.
@@ -98,7 +122,8 @@ Every deployed build carries an identity (`APP_BUILD_ID` = commit SHA,
 reload banner and the next in-app navigation does a full page load.
 
 - Deploy the `dist` artifact CD builds; don't rebuild it by hand.
-- Roll back by reverting on `develop` and releasing, not by redeploying an old
+- Roll back by reverting on `develop` and releasing (or a `hotfix/*` revert when
+  it's urgent), not by redeploying an old
   artifact. An old artifact has a lower run number, so open tabs won't be told
   to reload.
 - Don't rename `cd.yml`: its run number would restart at 1.

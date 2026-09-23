@@ -20,4 +20,27 @@
     "BETTER_AUTH_URL": "https://rolemark.example.com",
   },
   // Secrets (wrangler secret put <NAME>): BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+
+  // Top level = production (deployed from main). Staging is deployed from develop and must never
+  // share production's database: bindings and vars are not inherited, so each is set here. The
+  // environment is chosen at build time: `CLOUDFLARE_ENV=staging bun run build`.
+  "env": {
+    "staging": {
+      "name": "rolemark-staging",
+      "hyperdrive": [
+        {
+          // Same caching concern as production; see docs/known-concerns.md.
+          "binding": "HYPERDRIVE",
+          // Create with: wrangler hyperdrive create rolemark-db-staging --connection-string="<staging postgres url>"
+          "id": "REPLACE_WITH_STAGING_HYPERDRIVE_ID",
+          "localConnectionString": "postgres://rolemark:rolemark@localhost:5432/rolemark",
+        },
+      ],
+      "vars": {
+        "BETTER_AUTH_URL": "https://staging.rolemark.example.com",
+      },
+      // Secrets (wrangler secret put <NAME> --env staging): BETTER_AUTH_SECRET, GOOGLE_CLIENT_ID,
+      // GOOGLE_CLIENT_SECRET. Use a different BETTER_AUTH_SECRET from production.
+    },
+  },
 }

@@ -24,6 +24,14 @@ if [ ! -f "$dist_dir/server/wrangler.json" ]; then
   exit 1
 fi
 
+# The Cloudflare build bakes in its target environment; refuse a mismatch so a
+# staging build (staging database) can never ship to production, or vice versa.
+built_for="$(jq -r '.targetEnvironment // "production"' "$dist_dir/server/wrangler.json")"
+if [ "$built_for" != "$environment" ]; then
+  echo "error: $dist_dir was built for '$built_for', not '$environment'" >&2
+  exit 1
+fi
+
 echo "STUB deploy to $environment of build ${APP_BUILD_SEQ:-?} (${APP_BUILD_ID:-unknown})"
 echo "Contents of $dist_dir:"
 find "$dist_dir" -maxdepth 2 | sort

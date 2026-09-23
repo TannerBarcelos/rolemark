@@ -30,11 +30,13 @@ jobs:
       # resets it to 1, which would make every new build look older.
       APP_BUILD_ID: ${{ github.sha }}
       APP_BUILD_SEQ: ${{ github.run_number }}
+      # Selects the wrangler.jsonc environment. Empty = top level (production).
+      CLOUDFLARE_ENV: ${{ github.ref_name == 'develop' && 'staging' || '' }}
     steps:
       - uses: actions/checkout@v4
 
       # Each environment is built separately: the Cloudflare Vite plugin bakes
-      # the Worker config (bindings, vars) in at build time. The artifact
+      # the Worker config (name, bindings, vars) in at build time. The artifact
       # deployed is still exactly the one built here.
       - uses: ./.github/actions/check
 
