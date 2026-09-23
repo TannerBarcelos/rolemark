@@ -4,8 +4,8 @@ import { useVersionDrift } from "#/hooks/use-version-drift";
 
 export function VersionDriftBanner() {
   const { isStale, liveBuild, reload } = useVersionDrift();
-  // "Later" hides the banner until a newer deploy lands. The next in-app
-  // navigation still picks up the new build (see useVersionDrift).
+  // "Later" hides the banner until a newer deploy lands. The tab stays on its
+  // current build until the user reloads.
   const [dismissedFor, setDismissedFor] = useState<string | null>(null);
 
   const dismissKey = liveBuild?.id ?? "unknown";

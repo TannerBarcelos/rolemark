@@ -1,4 +1,3 @@
-import { useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BUILD, VERSION_ENDPOINT, isBuildInfo, isNewerBuild, type BuildInfo } from "#/lib/version";
@@ -31,11 +30,10 @@ async function fetchLiveBuild(signal: AbortSignal): Promise<BuildInfo | null> {
  * regains focus, and immediately when a lazy chunk fails to load (the usual
  * symptom of a deploy removing old assets).
  *
- * Once stale, the next in-app navigation becomes a full document load, so
- * users pick up the new build at a natural break without losing work.
+ * Detection only: the tab keeps running its current bundle until the user
+ * chooses to reload.
  */
 export function useVersionDrift(): VersionDrift {
-  const router = useRouter();
   const [liveBuild, setLiveBuild] = useState<BuildInfo | null>(null);
   const [chunkLoadFailed, setChunkLoadFailed] = useState(false);
   const inFlight = useRef<AbortController | null>(null);
@@ -74,7 +72,7 @@ export function useVersionDrift(): VersionDrift {
     };
     const onFocus = () => void check();
     const onPreloadError = (event: Event) => {
-      // Stop Vite from throwing; the banner and next navigation handle it.
+      // Stop Vite from throwing; the banner offers the reload.
       event.preventDefault();
       setChunkLoadFailed(true);
       void check();
@@ -95,28 +93,6 @@ export function useVersionDrift(): VersionDrift {
   }, [check]);
 
   const isStale = chunkLoadFailed || (liveBuild !== null && isNewerBuild(liveBuild, BUILD));
-
-  // While stale, swap client-side navigations for full document loads.
-  useEffect(() => {
-    if (!isStale) return;
-    return router.history.block({
-      enableBeforeUnload: false,
-      blockerFn: ({ nextLocation, action }) => {
-        const href = router.history.createHref(nextLocation.href);
-        if (action === "PUSH") {
-          window.location.assign(href);
-        } else if (action === "REPLACE") {
-          window.location.replace(href);
-        } else {
-          // Back/forward/go: the URL has already changed, so reload in place.
-          // Let the router proceed; the page unloads before it matters.
-          window.location.reload();
-          return false;
-        }
-        return true;
-      },
-    });
-  }, [isStale, router]);
 
   const reload = useCallback(() => {
     window.location.reload();
