@@ -70,25 +70,35 @@ instance at module scope; always go through `getDb()` / `getAuth()`.
 
 Run `bun run cf-typegen` after changing bindings in `wrangler.jsonc` or keys in `.env`.
 
-## Deploys and version drift
+## Branches, releases, and version drift
 
-`main` is the only long-lived branch. Branch from it, open a PR back into it,
-and merge once CI passes and the branch is up to date with `main`.
+| Branch    | Role                                    | Receives PRs from         | Deploys to   |
+| --------- | --------------------------------------- | ------------------------- | ------------ |
+| `develop` | Staging: stable, next release candidate | feature branches          | `staging`    |
+| `main`    | Production                              | `develop` only (releases) | `production` |
+
+1. Branch from `develop`, open a PR back into `develop`. CI must pass and the
+   branch must be up to date.
+2. Merging deploys to **staging**. Verify there.
+3. To release, open a PR **`develop` → `main`** (merge commit). CI's
+   `release-source` check rejects PRs into `main` from any other branch.
+4. Merging deploys to **production**.
 
 - **CI** (`.github/workflows/ci.yml`) checks every pull request. Its builds
   are never deployed.
-- **CD** (`.github/workflows/cd.yml`) runs only on pushes to `main`: it
-  checks, builds once, and deploys that artifact via `scripts/deploy.sh`
-  (currently a stub; see "Deploying to Cloudflare" for the manual steps). Set the `PRODUCTION_URL` repository variable to have CD
-  confirm the live build after deploying.
+- **CD** (`.github/workflows/cd.yml`) runs only on pushes to `develop` and
+  `main`: it checks, builds once, and deploys that artifact via
+  `scripts/deploy.sh` (currently a stub; see "Deploying to Cloudflare" for the
+  manual steps). Set a `DEPLOY_URL` variable on each GitHub environment to have
+  CD confirm the live build after deploying.
 
 Every deployed build carries an identity (`APP_BUILD_ID` = commit SHA,
 `APP_BUILD_SEQ` = CD run number) that the client compares against
 `GET /api/version`. When the server is serving a newer build, open tabs show a
 reload banner and the next in-app navigation does a full page load.
 
-- Deploy the `dist` artifact CD builds; don't rebuild per environment.
-- Roll back by reverting the commit on `main`, not by redeploying an old
+- Deploy the `dist` artifact CD builds; don't rebuild it by hand.
+- Roll back by reverting on `develop` and releasing, not by redeploying an old
   artifact. An old artifact has a lower run number, so open tabs won't be told
   to reload.
 - Don't rename `cd.yml`: its run number would restart at 1.
