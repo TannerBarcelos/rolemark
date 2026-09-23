@@ -1,0 +1,21 @@
+name: CI
+
+# Verifies pull requests into develop (features) and main (releases). Builds
+# here are never deployed; see cd.yml.
+on:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/check

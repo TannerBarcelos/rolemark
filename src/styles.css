@@ -11,3 +11,47 @@ main {
   width: min(42rem, calc(100% - 2rem));
   margin: 4rem auto;
 }
+
+.version-banner {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 32rem;
+  margin-left: auto;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: #111827;
+  color: #f9fafb;
+  box-shadow: 0 10px 25px rgb(0 0 0 / 0.2);
+}
+
+.version-banner__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.version-banner button {
+  padding: 0.375rem 0.75rem;
+  border: 0;
+  border-radius: 0.375rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.version-banner__reload {
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 600;
+}
+
+.version-banner__dismiss {
+  background: transparent;
+  color: #d1d5db;
+}

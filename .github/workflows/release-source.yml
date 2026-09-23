@@ -1,0 +1,49 @@
+name: Release source
+
+# Production only receives releases (this repo's develop) and hotfixes (this
+# repo's hotfix/* branches). Make the `release-source` check required on main.
+#
+# Separate from CI so it can also run on `edited`: changing a PR's base branch
+# is an edit, and without re-running here a PR could pass against develop and
+# then be retargeted to main with a stale green check.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+concurrency:
+  group: release-source-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  release-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require develop or hotfix/* as the source of PRs into main
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$BASE_REF" != "main" ]; then
+            echo "Base is $BASE_REF; no release-source rule applies."
+            exit 0
+          fi
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "::error::PRs into main must come from this repository (got $HEAD_REPO:$HEAD_REF). Target develop instead."
+            exit 1
+          fi
+          case "$HEAD_REF" in
+            develop)
+              echo "Release PR from develop."
+              ;;
+            hotfix/*)
+              echo "Hotfix PR from $HEAD_REF. Also merge it into develop, or the next release will undo it."
+              ;;
+            *)
+              echo "::error::PRs into main must come from develop or hotfix/* (got $HEAD_REF). Target develop instead."
+              exit 1
+              ;;
+          esac

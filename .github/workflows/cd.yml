@@ -1,0 +1,91 @@
+name: CD
+
+# Builds and deploys each long-lived branch to its environment:
+#   develop -> staging     (every merged feature PR)
+#   main    -> production  (every merged release PR from develop)
+# Nothing else triggers this workflow. Its run_number is shared by both
+# branches, so it only ever grows within each environment.
+on:
+  push:
+    branches: [develop, main]
+
+# One deploy per environment at a time, in order. A queued run is replaced by
+# a newer one, so a superseded build never deploys after its replacement.
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Belt and braces: the trigger already limits this to these branches.
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    env:
+      # Build identity, baked into the client and server bundles. The client
+      # compares APP_BUILD_SEQ with /api/version to detect a newer deploy.
+      # run_number is per workflow file: renaming or recreating this file
+      # resets it to 1, which would make every new build look older.
+      APP_BUILD_ID: ${{ github.sha }}
+      APP_BUILD_SEQ: ${{ github.run_number }}
+      # Selects the wrangler.jsonc environment. Empty = top level (production).
+      CLOUDFLARE_ENV: ${{ github.ref_name == 'develop' && 'staging' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Each environment is built separately: the Cloudflare Vite plugin bakes
+      # the Worker config (name, bindings, vars) in at build time. The artifact
+      # deployed is still exactly the one built here.
+      - uses: ./.github/actions/check
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+          retention-days: 7
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    # GitHub enforces each environment's deployment-branch rule here:
+    # staging accepts develop only, production accepts main only.
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      url: ${{ vars.DEPLOY_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+
+      - name: Deploy
+        run: ./scripts/deploy.sh "$DEPLOY_ENV" dist
+        env:
+          DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+          APP_BUILD_ID: ${{ github.sha }}
+          APP_BUILD_SEQ: ${{ github.run_number }}
+
+      # Confirms the environment now serves this build. Skipped until the
+      # environment's DEPLOY_URL variable is set.
+      - name: Verify live build
+        if: vars.DEPLOY_URL != ''
+        env:
+          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
+          EXPECTED_SEQ: ${{ github.run_number }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            live=$(curl -fsS "${DEPLOY_URL%/}/api/version" | jq -r '.seq' || true)
+            if [ "$live" = "$EXPECTED_SEQ" ]; then
+              echo "$DEPLOY_URL is serving build $EXPECTED_SEQ"
+              exit 0
+            fi
+            echo "Attempt $attempt: live seq is '${live}', expected $EXPECTED_SEQ"
+            sleep 10
+          done
+          echo "::error::$DEPLOY_URL did not report build $EXPECTED_SEQ"
+          exit 1
