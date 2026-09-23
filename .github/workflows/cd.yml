@@ -1,0 +1,82 @@
+name: CD
+
+# Builds and deploys every push to main (i.e. every merged PR). Nothing else
+# can trigger this workflow, so its run_number counts main builds only.
+on:
+  push:
+    branches: [main]
+
+# One deploy at a time, in order. A queued run is replaced by a newer one, so
+# a superseded build never deploys after the build that replaced it.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Belt and braces: the trigger already limits this to main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      # Build identity, baked into the client and server bundles. The client
+      # compares APP_BUILD_SEQ with /api/version to detect a newer deploy.
+      # run_number is per workflow file: renaming or recreating this file
+      # resets it to 1, which would make every new build look older.
+      APP_BUILD_ID: ${{ github.sha }}
+      APP_BUILD_SEQ: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/check
+
+      # Deploy exactly this artifact. Rebuilding per environment would give
+      # each rebuild a different build identity.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+          retention-days: 7
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist
+
+      - name: Deploy
+        run: ./scripts/deploy.sh dist
+        env:
+          APP_BUILD_ID: ${{ github.sha }}
+          APP_BUILD_SEQ: ${{ github.run_number }}
+
+      # Confirms production now serves this build. Skipped until the
+      # PRODUCTION_URL repository variable is set.
+      - name: Verify live build
+        if: vars.PRODUCTION_URL != ''
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          EXPECTED_SEQ: ${{ github.run_number }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            live=$(curl -fsS "${PRODUCTION_URL%/}/api/version" | jq -r '.seq' || true)
+            if [ "$live" = "$EXPECTED_SEQ" ]; then
+              echo "Production is serving build $EXPECTED_SEQ"
+              exit 0
+            fi
+            echo "Attempt $attempt: live seq is '${live}', expected $EXPECTED_SEQ"
+            sleep 10
+          done
+          echo "::error::Production did not report build $EXPECTED_SEQ"
+          exit 1
