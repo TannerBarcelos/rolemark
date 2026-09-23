@@ -13,7 +13,7 @@ export function VersionDriftBanner() {
     <div className="version-banner" role="status" aria-live="polite">
       <div className="version-banner__text">
         <strong>Update available</strong>
-        <span>A new version of RoleMark is ready.</span>
+        <span>A new version of RoleMark is available.</span>
       </div>
       <div className="version-banner__actions">
         <button type="button" className="version-banner__refresh" onClick={reload}>
