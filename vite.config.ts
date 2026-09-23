@@ -6,28 +6,31 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
 import viteReact from "@vitejs/plugin-react";
 
-// One ID per build, shared by the client and server bundles. The client bakes
-// it in at build time; the server reports it from /api/version. When they
-// differ, the open tab is running stale code.
+// Build identity, shared by the client and server bundles. The client bakes it
+// in at build time; the server reports it from /api/version. `time` orders
+// builds so a tab only prompts when the server is strictly newer. CI pins both
+// values (see .github/workflows/ci.yml); local builds fall back to git + now.
 function resolveBuildId(): string {
-  const fromEnv = process.env.APP_BUILD_ID ?? process.env.VERCEL_GIT_COMMIT_SHA;
-  if (fromEnv) return fromEnv;
-
-  const stamp = Date.now().toString(36);
+  if (process.env.APP_BUILD_ID) return process.env.APP_BUILD_ID;
   try {
-    const sha = execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
       .toString()
       .trim();
-    return `${sha}-${stamp}`;
   } catch {
-    return stamp;
+    return "local";
   }
+}
+
+function resolveBuildTime(): number {
+  const fromEnv = Number(process.env.APP_BUILD_TIME);
+  return Number.isSafeInteger(fromEnv) && fromEnv > 0 ? fromEnv : Date.now();
 }
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   define: {
     __APP_BUILD_ID__: JSON.stringify(resolveBuildId()),
+    __APP_BUILD_TIME__: JSON.stringify(resolveBuildTime()),
   },
   plugins: [tanstackStart(), viteReact()],
 });

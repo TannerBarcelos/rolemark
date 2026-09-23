@@ -1,23 +1,24 @@
+import { useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { BUILD_ID, VERSION_ENDPOINT, type VersionResponse } from "#/lib/version";
+import { BUILD, VERSION_ENDPOINT, isBuildInfo, isNewerBuild, type BuildInfo } from "#/lib/version";
 
 const POLL_INTERVAL_MS = 60_000;
 
 export type VersionDrift = {
-  /** True once the server reports a build that differs from this bundle. */
+  /** True once this tab is known to be running an outdated bundle. */
   isStale: boolean;
-  /** The build ID the server is currently serving, when known. */
-  liveBuildId: string | null;
+  /** The build the server is currently serving, when known. */
+  liveBuild: BuildInfo | null;
   reload: () => void;
 };
 
-async function fetchLiveBuildId(signal: AbortSignal): Promise<string | null> {
+async function fetchLiveBuild(signal: AbortSignal): Promise<BuildInfo | null> {
   try {
     const res = await fetch(VERSION_ENDPOINT, { cache: "no-store", signal });
     if (!res.ok) return null;
-    const body = (await res.json()) as Partial<VersionResponse>;
-    return typeof body.buildId === "string" ? body.buildId : null;
+    const body: unknown = await res.json();
+    return isBuildInfo(body) ? body : null;
   } catch {
     // Offline, aborted, or mid-deploy. Try again on the next tick.
     return null;
@@ -25,13 +26,17 @@ async function fetchLiveBuildId(signal: AbortSignal): Promise<string | null> {
 }
 
 /**
- * Detects skew between the bundle running in this tab and the build the
- * server is serving. Checks on an interval while the tab is visible, whenever
- * the tab regains focus, and immediately when a lazy chunk fails to load
- * (the usual symptom of a deploy removing old assets).
+ * Detects when the bundle in this tab is older than the build the server is
+ * serving. Checks on an interval while the tab is visible, whenever the tab
+ * regains focus, and immediately when a lazy chunk fails to load (the usual
+ * symptom of a deploy removing old assets).
+ *
+ * Once stale, the next in-app navigation becomes a full document load, so
+ * users pick up the new build at a natural break without losing work.
  */
 export function useVersionDrift(): VersionDrift {
-  const [liveBuildId, setLiveBuildId] = useState<string | null>(null);
+  const router = useRouter();
+  const [liveBuild, setLiveBuild] = useState<BuildInfo | null>(null);
   const [chunkLoadFailed, setChunkLoadFailed] = useState(false);
   const inFlight = useRef<AbortController | null>(null);
 
@@ -39,13 +44,13 @@ export function useVersionDrift(): VersionDrift {
     if (inFlight.current) return;
     const controller = new AbortController();
     inFlight.current = controller;
-    const id = await fetchLiveBuildId(controller.signal);
+    const build = await fetchLiveBuild(controller.signal);
     inFlight.current = null;
-    if (id) setLiveBuildId(id);
+    if (build) setLiveBuild(build);
   }, []);
 
   useEffect(() => {
-    // Dev rebuilds are handled by HMR; the build ID is fixed per dev server.
+    // Dev rebuilds are handled by HMR; the build is fixed per dev server.
     if (import.meta.env.DEV) return;
 
     void check();
@@ -69,7 +74,7 @@ export function useVersionDrift(): VersionDrift {
     };
     const onFocus = () => void check();
     const onPreloadError = (event: Event) => {
-      // Stop Vite from throwing; the banner offers the fix instead.
+      // Stop Vite from throwing; the banner and next navigation handle it.
       event.preventDefault();
       setChunkLoadFailed(true);
       void check();
@@ -89,11 +94,33 @@ export function useVersionDrift(): VersionDrift {
     };
   }, [check]);
 
+  const isStale = chunkLoadFailed || (liveBuild !== null && isNewerBuild(liveBuild, BUILD));
+
+  // While stale, swap client-side navigations for full document loads.
+  useEffect(() => {
+    if (!isStale) return;
+    return router.history.block({
+      enableBeforeUnload: false,
+      blockerFn: ({ nextLocation, action }) => {
+        const href = router.history.createHref(nextLocation.href);
+        if (action === "PUSH") {
+          window.location.assign(href);
+        } else if (action === "REPLACE") {
+          window.location.replace(href);
+        } else {
+          // Back/forward/go: the URL has already changed, so reload in place.
+          // Let the router proceed; the page unloads before it matters.
+          window.location.reload();
+          return false;
+        }
+        return true;
+      },
+    });
+  }, [isStale, router]);
+
   const reload = useCallback(() => {
     window.location.reload();
   }, []);
 
-  const isStale = chunkLoadFailed || (liveBuildId !== null && liveBuildId !== BUILD_ID);
-
-  return { isStale, liveBuildId, reload };
+  return { isStale, liveBuild, reload };
 }

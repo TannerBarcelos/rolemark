@@ -3,11 +3,14 @@ import { useState } from "react";
 import { useVersionDrift } from "#/lib/use-version-drift";
 
 export function VersionDriftBanner() {
-  const { isStale, liveBuildId, reload } = useVersionDrift();
-  // Dismissal is per live build, so a newer deploy shows the banner again.
+  const { isStale, liveBuild, reload } = useVersionDrift();
+  // "Later" hides the banner until a newer deploy lands. The next in-app
+  // navigation still picks up the new build (see useVersionDrift).
   const [dismissedFor, setDismissedFor] = useState<string | null>(null);
 
-  if (!isStale || (dismissedFor !== null && dismissedFor === liveBuildId)) return null;
+  const dismissKey = liveBuild?.id ?? "unknown";
+
+  if (!isStale || dismissedFor === dismissKey) return null;
 
   return (
     <div className="version-banner" role="status" aria-live="polite">
@@ -19,7 +22,7 @@ export function VersionDriftBanner() {
         <button
           type="button"
           className="version-banner__dismiss"
-          onClick={() => setDismissedFor(liveBuildId)}
+          onClick={() => setDismissedFor(dismissKey)}
         >
           Later
         </button>
